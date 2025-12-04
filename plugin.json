@@ -1,0 +1,34 @@
+{
+  "name": "siyuan-pledger",
+  "author": "li.mian",
+  "url": "https://github.com/d3-double3/siyuan-pledger.git",
+  "version": "0.0.1",
+  "minAppVersion": "3.1.3",
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "en_US": "pledger",
+    "zh_CN": "pledger"
+  },
+  "description": {
+    "en_US": "A personal ledger plugin for SiYuan.",
+    "zh_CN": "A personal ledger plugin for SiYuan."
+  },
+  "readme": {
+    "en_US": "README.md",
+    "zh_CN": "README_zh_CN.md"
+  },
+  "funding": {
+    "custom": [
+      ""
+    ]
+  },
+  "keywords": [
+    "ledger",
+    "账本"
+  ]
+}
