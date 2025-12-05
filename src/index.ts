@@ -1,6 +1,7 @@
 import { Plugin, Menu, Dialog, getFrontend } from "siyuan";
 import { createApp } from 'vue'
 import SettingView from './view/Setting.vue'
+import './style.css';
 
 export default class PersonalLedgerPlug extends Plugin {
 

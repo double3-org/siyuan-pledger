@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
 import { viteStaticCopy } from "vite-plugin-static-copy"
 import { resolve } from "path"
+import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
 import minimist from 'minimist';
 
 // 需要调整为本地的配置
@@ -21,6 +22,7 @@ export default defineConfig({
   },
   plugins: [
     vue(),
+    tailwindcss(),
     viteStaticCopy({
       targets: [
         {
@@ -56,11 +58,10 @@ export default defineConfig({
       output: {
         entryFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          const name = Array.isArray(assetInfo.names) ? assetInfo.names[0] : undefined;
-          if (name === "style.css") {
+          if (assetInfo.name === "siyuan-pledger.css") {
             return "index.css"
           }
-          return String(name)
+          return String(assetInfo.name)
         },
       },
       plugins: [

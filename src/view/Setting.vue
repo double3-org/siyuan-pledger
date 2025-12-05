@@ -1,7 +1,7 @@
 <template>
-  <div class="d3-mt">
-    setting
-  </div>
+  <h1 class="text-3xl font-bold underline">
+    <button class="btn btn-info">Info</button>
+  </h1>
 
 </template>
 

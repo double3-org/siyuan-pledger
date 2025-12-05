@@ -1,0 +1,10 @@
+@import "tailwindcss";
+/* @plugin "daisyui"; */
+
+.a {
+    color: red;
+}
+
+.a2 {
+    color: burlywood;
+}

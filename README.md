@@ -21,3 +21,8 @@
 在热部署生效前提下，监听器会回调 `siyuan` 的接口关闭并重启本插件，以确保插件被重新加载，如果你的文件很多，可能性能会很差。
 
 如果该功能不生效，请检查 `vite.config.ts` 中 `BASRE_URL` 是否配置正确
+
+#### 使用组件
+https://tailwindcss.com/docs
+https://daisyui.com/components/
+
