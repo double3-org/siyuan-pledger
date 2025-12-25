@@ -1,3 +1,5 @@
+import "./utils/safe-custom-elements-patch "
+import "cally";
 import {
   Plugin,
   Menu,
@@ -7,14 +9,10 @@ import {
   showMessage,
 } from "siyuan";
 import { createApp, ref } from "vue";
+
 import SettingView from "./view/Setting.vue";
 import MainView from "./view/Main.vue";
 import "./style.css";
-// import "cally";
-
-if (!customElements.get("calendar-ctx")) {
-  import("cally");
-}
 
 const settingConfFile = "setting.json"; // 插件的数据，会被保存在 data/storage/petal/<name>/​ 下
 const settingConfData = ref<SettingConfig>({ documentId: "", config: "" });
