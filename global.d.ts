@@ -14,7 +14,7 @@ declare global {
     name: string; // 名称, 中文
     amount: number; // 总金额
     icon?: string; // 图标名称, 需要在 siyuan 中注册
-    time?: Date; // 记录时间
+    time?: string; // 记录时间
     children?: LedgerItem[]; // 子项
   }
 }
