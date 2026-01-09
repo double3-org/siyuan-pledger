@@ -1,5 +1,4 @@
 import { fetchSyncPost, IWebSocketData, IFile } from "siyuan";
-import { type AstNode } from "../utils/parse-ast-tuil.ts";
 
 /**
  * 根据文档id获取文档路径 和 notebook id /api/filetree/getPathByID
@@ -76,20 +75,17 @@ export async function createDoc(
 
 /**
  * 根据文档id, 获取第一个表格块信息, 包含 id 和 markdown
- * 第一个表格, 年度汇总表
- * 第二个表格, 详情表
  * SELECT id,markdown FROM blocks WHERE root_id = '20251225201147-xfwjyyj' AND type = 't' limit 1
  */
 export async function getTableBlockByDocId(
-  id: string,
-  index: number
+  id: string
 ): Promise<{ id: string; markdown: string }> {
-  const sql = `SELECT id,markdown FROM blocks WHERE root_id = '${id}' AND type = 't' limit ${index}`;
+  const sql = `SELECT id,markdown FROM blocks WHERE root_id = '${id}' AND type = 't' limit 1`;
   const resp = await executeSql(sql);
-  if (resp.code !== 0 || resp.data.length < index) {
+  if (resp.code !== 0 || resp.data.length < 1) {
     return { id: "", markdown: "" };
   }
-  return resp.data[index - 1];
+  return resp.data[0];
 }
 
 /**
@@ -156,37 +152,4 @@ export async function getCurrentTime() {
     return new Date(resp.data).toISOString().split('T')[0];
   }
   return new Date().toISOString().split('T')[0];
-}
-
-/**
- *  ======================================================================
- */
-
-/**
- * 获取文档内容根据文档id
- * 1、getPathAndNoteId
- * 2、根据文件路径获取文件内容 /api/file/getFile
- * @param id 文档id
- * @return 文档内容, Children 数组
- */
-export async function getDocContentById(id: string): Promise<AstNode | null> {
-  var docPathResp = await getPathAndNoteId(id);
-  var resp = (await fetchSyncPost("/api/file/getFile", {
-    path: "data/" + docPathResp.notebook + "/" + docPathResp.path,
-  })) as IWebSocketData & AstNode;
-  if (!resp) {
-    return null;
-  }
-  return resp;
-}
-
-/**
- * 获取块 kramdown 源码 /api/block/getBlockKramdown
- */
-export async function getBlockKramdownSrcById(id: string): Promise<string> {
-  var resp = await fetchSyncPost("/api/block/getBlockKramdown", { id });
-  if (resp.code !== 0) {
-    return "";
-  }
-  return resp.data.kramdown;
 }

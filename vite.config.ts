@@ -12,6 +12,8 @@ const BASRE_URL = "http://127.0.0.1:6806/";
 
 const args = minimist(process.argv.slice(2));
 const isDev = args.d || false;
+const isSourcemap = args.sourcemap ? "inline" : isDev ? "inline" : false;
+const isMinify = args.minify ?? !isDev;
 const distDir = isDev
   ? `${SIYUAN_WORKSPACE}/data/plugins/${PLUGIN_NAME}`
   : "dist";
@@ -50,8 +52,8 @@ export default defineConfig({
   ],
   build: {
     outDir: distDir,
-    sourcemap: isDev ? "inline" : false,
-    minify: !isDev,
+    sourcemap: isSourcemap, // 开发模式下生成内联 sourcemap
+    minify: isMinify, // 非开发模式下进行代码压缩
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
       fileName: () => "index.js",
@@ -87,7 +89,7 @@ export default defineConfig({
         },
       ],
     },
-  }
+  },
 });
 
 /**
