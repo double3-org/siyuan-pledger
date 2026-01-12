@@ -8,6 +8,7 @@ declare global {
   interface SettingConfig {
     documentId: string; // 账本所在文档 ID
     config: string; // 账本配置内容
+    planNum: string; // 目标金额
   }
 
   interface LedgerItem {

@@ -12,6 +12,15 @@
       </div>
 
       <label class="col-span-2 text-sm font-medium text-gray-700">
+        目标金额
+        <p class="text-xs text-gray-500">请填写目标金额, 默认100W</p>
+      </label>
+
+      <div class="col-span-4">
+        <input type="text" v-model="localSetting.planNum" placeholder="目标金额" class="w-full h-10 px-3 input" />
+      </div>
+
+      <label class="col-span-2 text-sm font-medium text-gray-700">
         配置
         <p class="text-xs text-gray-500">
           请按照如下格式填入配置

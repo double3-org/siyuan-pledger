@@ -52,7 +52,7 @@
       <!-- 详细列表 -->
       <div class="mt-2">
         <ul class="list bg-base-100">
-          <li class="list-row gap-x-3 gap-y-1 items-center px-[6px] py-[10px]" v-for="(acc, index) in accountShow"
+          <li class="list-row gap-x-3 gap-y-1 items-center px-[6px] py-[10px]" v-for="(acc, index) in latestLedgerList"
             :key="index">
             <div>
               <svg class="h-6 w-6 stroke-current">
@@ -101,12 +101,27 @@
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4 items-start">
-        <BIMain>
-          <Line class="h-60 w-full" :lineData="lineData"></Line>
+        <BIMain class="h-60">
+          <template #title>
+            <span>走势</span>
+          </template>
+          <Line class="h-50 w-full" :lineData="lineData"></Line>
         </BIMain>
-        <BIMain>
-          <div>2222</div>
-        </BIMain>
+        <div class="grid grid-cols-1 gap-4">
+          <BIMain class="h-28">
+            <template #title>
+              <span>分析</span>
+            </template>
+            <Compare class="w-full" :amountDiff="accountDiff" :rateDiff="rateDiff" :date="secondDate"></Compare>
+          </BIMain>
+          <BIMain class="h-28">
+            <template #title>
+              <span>计划</span>
+            </template>
+            <Plan :blockNm="100" :value="planRate" />
+          </BIMain>
+        </div>
+
         <BIMain class="col-span-2">
           <div>3333</div>
         </BIMain>
@@ -125,6 +140,8 @@ import { open } from "../utils/dialog-utils.ts"
 import currency from "currency.js"
 import BIMain from './bi/BIMain.vue';
 import Line from './bi/Line.vue';
+import Compare from './bi/Compare.vue';
+import Plan from './bi/Plan.vue';
 
 const props = defineProps<{
   settingConfData: SettingConfig // 配置数据
@@ -132,7 +149,7 @@ const props = defineProps<{
 
 
 // 资产记录列表 最新记录
-const accountShow = ref<LedgerItem[]>()
+const latestLedgerList = ref<LedgerItem[]>([])
 // 资产总额 最新记录
 const accountTotal = ref<string>("0");
 // 日期 最新记录
@@ -140,6 +157,14 @@ const accountDate = ref<string>("");
 
 // 折线图数据 最新一年
 const lineData = ref<{ time: string; value: number }[]>([]);
+// 比较日期 比较数据
+const secondDate = ref<string>("");
+// 差额 比较数据
+const accountDiff = ref<number>(0);
+// 差率 比较数据
+const rateDiff = ref<number>(0);
+// 计划完成率 计划数据
+const planRate = ref<number>(0);
 
 // 获取页面数据
 initData()
@@ -199,25 +224,28 @@ async function initData() {
   if (!yearDocs) return;
   const latestYearDoc = yearDocs[0];
   const accountList = await getLedgerListByYearDocId(latestYearDoc.id)
-  // 根据 time 字段, 取最新的日期
+  // 根据 time 字段, 取最新的日期, 和第二新的日期
   let latestDate = "";
+  let secondLatestDate = "";
   for (const item of accountList) {
     if (!item.time) continue;
     if (item.time > latestDate) {
       latestDate = item.time ?? '';
     }
+    if (item.time < latestDate && item.time > secondLatestDate) {
+      secondLatestDate = item.time ?? '';
+    }
   }
   console.log(accountList, 'accountList');
   // 左侧总览数据赋值
-  const latestLedgerList: LedgerItem[] = accountList.filter(
-    item => item.time === latestDate
-  );
   // 左侧 列表
-  accountShow.value = latestLedgerList;
+  latestLedgerList.value = accountList.filter(
+    item => item.time === latestDate
+  );;
   // 左侧 最新日期
-  accountDate.value = latestLedgerList.length > 0 ? latestLedgerList[0].time || '' : '';
+  accountDate.value = latestLedgerList.value.length > 0 ? latestLedgerList.value[0].time || '' : '';
   // 左侧 总额
-  const sum = latestLedgerList.reduce((acc, child) => {
+  const sum = latestLedgerList.value.reduce((acc, child) => {
     return currency(acc).add(child.amount || 0).value;
   }, 0);
   accountTotal.value = currency(sum, {
@@ -234,15 +262,19 @@ async function initData() {
   }
   lineData.value = Array.from(map.entries()).map(([time, value]) => ({ time, value }));
   console.log(lineData.value, 'lineData');
-  
-
-}
-
-// 获取最新一年的最近一次的记录
-async function getLatestLedgerList() {
-  // 获取最新的 yearDocId
-  const yearDocs = await getYearDocs();
-
+  // 右侧比较图, 获取上一期数据
+  const secondLatestLedgerList: LedgerItem[] = accountList.filter(
+    item => item.time === secondLatestDate
+  );
+  secondDate.value = secondLatestDate;
+  // 计算差额 和 差率
+  const secondSum = secondLatestLedgerList.reduce((acc, child) => {
+    return currency(acc).add(child.amount || 0).value;
+  }, 0);
+  accountDiff.value = currency(sum).subtract(secondSum).value;
+  rateDiff.value = secondSum === 0 ? 0 : currency(accountDiff.value, { precision: 4 }).divide(Math.abs(secondSum)).multiply(100).value;
+  // 右侧计划图, 计算计划完成率
+  planRate.value = sum / (Number(props.settingConfData.planNum) ?? 1000000);
 }
 
 // 根据文档编号获取全年数据
@@ -270,7 +302,6 @@ async function getYearDocs(): Promise<IFile[]> {
     )
     .sort((a, b) => extractYear(b) - extractYear(a));
 }
-
 
 </script>
 

@@ -5,10 +5,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import * as echarts from 'echarts/core';
-import {
-  TooltipComponent,
-  GridComponent,
-} from 'echarts/components';
+import { TooltipComponent, GridComponent } from 'echarts/components';
 import { LineChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 
@@ -42,11 +39,6 @@ function initChart() {
  */
 function renderChart() {
   if (!chartInstance || !props.lineData) return;
-
-  const values = props.lineData.map(d => d.value);
-  const minVal = Math.min(...values); 
-  const maxVal = Math.max(...values) ;
-
   const option = {
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'time' },
@@ -60,10 +52,10 @@ function renderChart() {
       max: (v: any) => v.max
     },
     grid: {
-      top: 16,
-      bottom: 30,
-      left: 10,
-      right: 20,
+      top: 20,
+      bottom: 10,
+      left: 4,
+      right: 10,
       containLabel: true
     },
     series: [
