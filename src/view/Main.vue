@@ -1,5 +1,6 @@
 <template>
   <div data-theme="emerald" class="double3-main grid grid-cols-3 gap-4 p-4 pt-6">
+    <!-- 左侧 -->
     <div class="col-span-1 lg:px-6">
       <!-- 顶部工具栏 -->
       <div class="mb-2 flex items-center justify-between">
@@ -48,7 +49,6 @@
           </div>
         </div>
       </div>
-      <!-- 目标记录 -->
       <!-- 详细列表 -->
       <div class="mt-2">
         <ul class="list bg-base-100">
@@ -66,11 +66,7 @@
             <p class="list-col-wrap text-xs col-start-2 col-end-5">
               {{acc.children?.map(c => `${c.name}:${c.amount ?? 0}`).join(', ')}}
             </p>
-            <button class="btn btn-square btn-ghost">
-              <svg class="h-4 w-4 stroke-current">
-                <use xlink:href="#iconD3FluIcon"></use>
-              </svg>
-            </button>
+
             <button class="btn btn-square btn-ghost">
               <svg class="h-4 w-4 stroke-current">
                 <use xlink:href="#iconD3EidtIcon"></use>
@@ -81,6 +77,7 @@
       </div>
     </div>
 
+    <!-- 右侧 -->
     <div class="col-span-2">
       <!-- 顶部工具栏 -->
       <div class="mb-2 flex items-center justify-between">
@@ -91,39 +88,52 @@
           </label>
 
           <label class="tab font-bold">
-            <input type="radio" name="pl-s-type" />
+            <input type="radio" name="pl-s-type" disabled />
             自定义
           </label>
 
           <div class="tab-content">
-            自定义时间范围
+            <form>
+              <input class="btn" type="checkbox" name="frameworks" aria-label="Svelte" />
+              <input class="btn" type="checkbox" name="frameworks" aria-label="Vue" />
+              <input class="btn" type="checkbox" name="frameworks" aria-label="React" />
+              <input class="btn btn-square" type="reset" value="×" />
+            </form>
           </div>
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4 items-start">
+        <!-- 走势图 -->
         <BIMain class="h-60">
           <template #title>
             <span>走势</span>
           </template>
           <Line class="h-50 w-full" :lineData="lineData"></Line>
         </BIMain>
+
         <div class="grid grid-cols-1 gap-4">
+          <!-- 分析图 -->
           <BIMain class="h-28">
             <template #title>
               <span>分析</span>
+              <span class="badge badge-ghost badge-xs">{{ accountDate }}</span>
             </template>
             <Compare class="w-full" :amountDiff="accountDiff" :rateDiff="rateDiff" :date="secondDate"></Compare>
           </BIMain>
+
+          <!-- 计划图 -->
           <BIMain class="h-28">
             <template #title>
               <span>计划</span>
+              <span class="badge badge-ghost badge-xs">{{ accountDate }}</span>
             </template>
             <Plan :blockNm="100" :value="planRate" />
           </BIMain>
         </div>
 
+        <!-- 详情表 -->
         <BIMain class="col-span-2">
-          <div>3333</div>
+          <Table class="w-full" :times="Array.from(allTimeSet)" :data="tableData" :conf="settingConfData.config" />
         </BIMain>
       </div>
     </div>
@@ -142,6 +152,7 @@ import BIMain from './bi/BIMain.vue';
 import Line from './bi/Line.vue';
 import Compare from './bi/Compare.vue';
 import Plan from './bi/Plan.vue';
+import Table from './bi/Table.vue';
 
 const props = defineProps<{
   settingConfData: SettingConfig // 配置数据
@@ -165,6 +176,9 @@ const accountDiff = ref<number>(0);
 const rateDiff = ref<number>(0);
 // 计划完成率 计划数据
 const planRate = ref<number>(0);
+// 表格数据
+const allTimeSet = ref<Set<string>>(new Set());
+const tableData = ref<LedgerItem[]>([]);
 
 // 获取页面数据
 initData()
@@ -227,6 +241,7 @@ async function initData() {
   // 根据 time 字段, 取最新的日期, 和第二新的日期
   let latestDate = "";
   let secondLatestDate = "";
+  allTimeSet.value.clear();
   for (const item of accountList) {
     if (!item.time) continue;
     if (item.time > latestDate) {
@@ -235,13 +250,14 @@ async function initData() {
     if (item.time < latestDate && item.time > secondLatestDate) {
       secondLatestDate = item.time ?? '';
     }
+    allTimeSet.value.add(item.time);
   }
-  console.log(accountList, 'accountList');
+
   // 左侧总览数据赋值
   // 左侧 列表
   latestLedgerList.value = accountList.filter(
     item => item.time === latestDate
-  );;
+  );
   // 左侧 最新日期
   accountDate.value = latestLedgerList.value.length > 0 ? latestLedgerList.value[0].time || '' : '';
   // 左侧 总额
@@ -253,6 +269,10 @@ async function initData() {
   }).format();
 
   // 右侧图标数据赋值
+  console.log(accountList, 'accountList');
+
+  // 右侧表格数据
+  tableData.value = accountList;
   // 右侧折线图
   const map = new Map<string, number>();
   for (const item of accountList) {
@@ -261,7 +281,6 @@ async function initData() {
     map.set(item.time, prev + item.amount);
   }
   lineData.value = Array.from(map.entries()).map(([time, value]) => ({ time, value }));
-  console.log(lineData.value, 'lineData');
   // 右侧比较图, 获取上一期数据
   const secondLatestLedgerList: LedgerItem[] = accountList.filter(
     item => item.time === secondLatestDate

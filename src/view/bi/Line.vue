@@ -55,8 +55,8 @@ function renderChart() {
       top: 20,
       bottom: 10,
       left: 4,
-      right: 10,
-      containLabel: true
+      right: 10
+      // outerBounds: true
     },
     series: [
       {
