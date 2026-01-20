@@ -1,40 +1,42 @@
 {
-  "name": "siyuan-pledger",
-  "private": true,
-  "version": "0.0.1",
+  "name": "plugin-sample-vite",
+  "version": "0.4.1",
   "type": "module",
-  "description": "A personal ledger plugin for SiYuan.",
-  "repository": "https://github.com/d3-double3/siyuan-pledger.git",
+  "description": "This is a sample plugin based on vite and svelte for Siyuan (https://b3log.org/siyuan)",
+  "repository": "https://github.com/frostime/plugin-sample-vite",
   "homepage": "",
-  "author": "limain",
+  "author": "frostime",
   "license": "MIT",
   "scripts": {
-    "dev": "vite build --d=true",
-    "dev1": "vite build --d=true --sourcemap=false --minify=true",
-    "build": "vue-tsc -b && vite build"
+    "dev": "cross-env NODE_ENV=development VITE_SOURCEMAP=inline vite build --watch",
+    "build": "cross-env NODE_ENV=production vite build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
     "cally": "^0.9.0",
     "currency.js": "^2.0.4",
     "echarts": "^6.0.0",
-    "minimist": "^1.2.8",
-    "pinia": "^3.0.4",
     "tailwindcss": "^4.1.17",
     "vue": "^3.5.25",
     "vue-debounce": "^5.0.1"
   },
   "devDependencies": {
-    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.3.0",
     "@vitejs/plugin-vue": "^6.0.2",
     "autoprefixer": "^10.4.22",
+    "cross-env": "^7.0.3",
     "daisyui": "^5.5.8",
-    "postcss": "^8.5.6",
+    "fast-glob": "^3.2.12",
+    "glob": "^10.0.0",
+    "minimist": "^1.2.8",
+    "rollup-plugin-livereload": "^2.0.5",
     "siyuan": "1.1.5",
+    "siyuan-plugin-cli": "^2.5.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
     "vite-plugin-static-copy": "^3.1.4",
+    "vite-plugin-zip-pack": "^1.0.5",
     "vue-tsc": "^3.1.5"
   }
 }

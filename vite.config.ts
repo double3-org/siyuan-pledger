@@ -1,22 +1,21 @@
-import { defineConfig } from "vite";
-import { viteStaticCopy } from "vite-plugin-static-copy";
 import { resolve } from "path";
+import { defineConfig, loadEnv } from "vite";
+import { viteStaticCopy } from "vite-plugin-static-copy";
+import livereload from "rollup-plugin-livereload";
+import zipPack from "vite-plugin-zip-pack";
+import fg from "fast-glob";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
-import minimist from "minimist";
 
-// 需要调整为本地的配置
-const PLUGIN_NAME = "siyuan-pledger";
-const SIYUAN_WORKSPACE = "C:/Users/liyun/Documents/SiYuan";
-const BASRE_URL = "http://127.0.0.1:6806/";
+const env = process.env;
+const isSrcmap = env.VITE_SOURCEMAP === "inline";
+const isDev = env.NODE_ENV === "development";
 
-const args = minimist(process.argv.slice(2));
-const isDev = args.d || false;
-const isSourcemap = args.sourcemap ? "inline" : isDev ? "inline" : false;
-const isMinify = args.minify ?? !isDev;
-const distDir = isDev
-  ? `${SIYUAN_WORKSPACE}/data/plugins/${PLUGIN_NAME}`
-  : "dist";
+const outputDir = isDev ? "dev" : "dist";
+
+console.log("isDev=>", isDev);
+console.log("isSrcmap=>", isSrcmap);
+console.log("outputDir=>", outputDir);
 
 export default defineConfig({
   resolve: {
@@ -24,6 +23,7 @@ export default defineConfig({
       "@": resolve(__dirname, "src"),
     },
   },
+
   plugins: [
     vue({
       template: {
@@ -35,77 +35,124 @@ export default defineConfig({
     tailwindcss(),
     viteStaticCopy({
       targets: [
-        {
-          src: "./README*.md",
-          dest: "./",
-        },
-        {
-          src: "./plugin.json",
-          dest: "./",
-        },
-        {
-          src: "./icon.png",
-          dest: "./",
-        },
+        { src: "./README*.md", dest: "./" },
+        { src: "./plugin.json", dest: "./" },
+        { src: "./icon.png", dest: "./" },
       ],
     }),
   ],
+
+  define: {
+    "process.env.DEV_MODE": JSON.stringify(isDev),
+    "process.env.NODE_ENV": JSON.stringify(env.NODE_ENV),
+  },
+
   build: {
-    outDir: distDir,
-    sourcemap: isSourcemap, // 开发模式下生成内联 sourcemap
-    minify: isMinify, // 非开发模式下进行代码压缩
+    outDir: outputDir,
+    emptyOutDir: false,
+    minify: true,
+    sourcemap: isSrcmap ? "inline" : false,
+
     lib: {
       entry: resolve(__dirname, "src/index.ts"),
-      fileName: () => "index.js",
+      fileName: "index",
       formats: ["cjs"],
     },
-    watch: {
-      include: "src/**", // 监控 src 目录下的文件变化
-      exclude: ["node_modules/**", "dist/**"], // 排除 node_modules 目录
-    },
     rollupOptions: {
+      plugins: [
+        ...(isDev
+          ? [
+              livereload(outputDir),
+              {
+                name: "watch-external",
+                async buildStart() {
+                  const files = await fg([
+                    "public/i18n/**",
+                    "./README*.md",
+                    "./plugin.json",
+                  ]);
+                  for (let file of files) {
+                    this.addWatchFile(file);
+                  }
+                },
+              },
+            ]
+          : [
+              cleanupDistFiles({
+                patterns: ["i18n/*.md"],
+                distDir: outputDir,
+              }),
+              zipPack({
+                inDir: "./dist",
+                outDir: "./",
+                outFileName: "package.zip",
+              }),
+            ]),
+      ],
+
       external: ["siyuan", "process"],
+
       output: {
         entryFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "siyuan-pledger.css") {
+          if (assetInfo.name === "style.css") {
             return "index.css";
           }
-          return String(assetInfo.name);
+          return assetInfo.name;
         },
       },
-      plugins: [
-        {
-          name: "code-watch",
-          buildStart() {
-            console.log("Watching for file changes...");
-          },
-          async writeBundle() {
-            // 重启插件
-            pluginStateHandler(false).then(() => {
-              pluginStateHandler(true);
-            });
-          },
-        },
-      ],
     },
   },
 });
 
 /**
- * 控制插件启用状态
- * @param state
+ * Clean up some dist files after compiled
+ * @author frostime
+ * @param options:
+ * @returns
  */
-async function pluginStateHandler(state: boolean) {
-  await fetch(BASRE_URL + "api/petal/setPetalEnabled", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+function cleanupDistFiles(options: { patterns: string[]; distDir: string }) {
+  const { patterns, distDir } = options;
+
+  return {
+    name: "rollup-plugin-cleanup",
+    enforce: "post",
+    writeBundle: {
+      sequential: true,
+      order: "post" as "post",
+      async handler() {
+        const fg = await import("fast-glob");
+        const fs = await import("fs");
+        // const path = await import('path');
+
+        // 使用 glob 语法，确保能匹配到文件
+        const distPatterns = patterns.map((pat) => `${distDir}/${pat}`);
+        console.debug("Cleanup searching patterns:", distPatterns);
+
+        const files = await fg.default(distPatterns, {
+          dot: true,
+          absolute: true,
+          onlyFiles: false,
+        });
+
+        // console.info('Files to be cleaned up:', files);
+
+        for (const file of files) {
+          try {
+            if (fs.default.existsSync(file)) {
+              const stat = fs.default.statSync(file);
+              if (stat.isDirectory()) {
+                fs.default.rmSync(file, { recursive: true });
+              } else {
+                fs.default.unlinkSync(file);
+              }
+              console.log(`Cleaned up: ${file}`);
+            }
+          } catch (error) {
+            console.error(`Failed to clean up ${file}:`, error);
+          }
+        }
+      },
     },
-    body: JSON.stringify({
-      packageName: "siyuan-pledger",
-      enabled: state,
-      frontend: "desktop",
-    }),
-  });
+  };
 }

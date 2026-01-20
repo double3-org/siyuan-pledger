@@ -1,1 +1,0 @@
-{"root":["./src/index.ts","./src/vite-env.d.ts","./src/api/siyuanapi.ts","./src/utils/dialog-utils.ts","./src/utils/parse-ast-tuil.ts","./src/utils/pl-utils.ts","./src/utils/safe-custom-elements-patch .ts","./src/view/ledgeredit.vue","./src/view/main.vue","./src/view/setting.vue","./src/view/bi/bimain.vue","./global.d.ts"],"version":"5.9.3"}
