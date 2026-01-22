@@ -1,4 +1,5 @@
 import { fetchSyncPost, IWebSocketData, IFile } from "siyuan";
+import { tableMD2json } from "../utils/pl-utils.js";
 
 /**
  * 根据文档id获取文档路径 和 notebook id /api/filetree/getPathByID
@@ -6,7 +7,7 @@ import { fetchSyncPost, IWebSocketData, IFile } from "siyuan";
  * @return {notebook: string; path: string} 笔记本id 和 文件路径
  */
 export async function getPathAndNoteId(
-  id: string
+  id: string,
 ): Promise<{ notebook: string; path: string }> {
   var resp = await fetchSyncPost("/api/filetree/getPathByID", { id });
   if (resp.code !== 0) {
@@ -61,7 +62,7 @@ export async function getFileTreeById(id: string): Promise<IFile[]> {
  */
 export async function createDoc(
   title: string,
-  pDocId: string
+  pDocId: string,
 ): Promise<string> {
   var docHPath = await getHPath(pDocId);
   var docPathResp = await getPathAndNoteId(pDocId);
@@ -78,7 +79,7 @@ export async function createDoc(
  * SELECT id,markdown FROM blocks WHERE root_id = '20251225201147-xfwjyyj' AND type = 't' limit 1
  */
 export async function getTableBlockByDocId(
-  id: string
+  id: string,
 ): Promise<{ id: string; markdown: string }> {
   const sql = `SELECT id,markdown FROM blocks WHERE root_id = '${id}' AND type = 't' limit 1`;
   const resp = await executeSql(sql);
@@ -94,7 +95,7 @@ export async function getTableBlockByDocId(
  */
 export async function insertTableBlock(
   docId: string,
-  mkStr: string
+  mkStr: string,
 ): Promise<string> {
   var resp = await fetchSyncPost("/api/block/insertBlock", {
     dataType: "markdown",
@@ -112,7 +113,7 @@ export async function insertTableBlock(
  */
 export async function updateBlockContent(
   blockId: string,
-  mkStr: string
+  mkStr: string,
 ): Promise<string> {
   var resp = await fetchSyncPost("/api/block/updateBlock", {
     dataType: "markdown",
@@ -149,7 +150,39 @@ export async function blockDocument(id: string): Promise<boolean> {
 export async function getCurrentTime() {
   var resp = await fetchSyncPost("/api/system/currentTime");
   if (resp.code === 0) {
-    return new Date(resp.data).toISOString().split('T')[0];
+    return new Date(resp.data).toISOString().split("T")[0];
   }
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString().split("T")[0];
+}
+
+// 根据文档编号获取全年数据
+export async function getLedgerListByYearDocId(
+  yearDocId: string,
+  settingConfData: SettingConfig,
+): Promise<LedgerItem[]> {
+  if (yearDocId) {
+    let { markdown: tableBlockMarkdown } =
+      await getTableBlockByDocId(yearDocId);
+    const accountList: LedgerItem[] = tableMD2json(
+      tableBlockMarkdown,
+      settingConfData.config,
+    );
+    return accountList;
+  } else {
+    return [];
+  }
+}
+
+// 根据年份获取年文件id列表, 降序, 文件名称为 xxxx.sy, 例如 2025.sy
+export async function getYearDocs(documentId: string): Promise<IFile[]> {
+  function extractYear(file: IFile): number {
+    return Number(file.name.replace(".sy", ""));
+  }
+  const fileList = await getFileTreeById(documentId);
+  return fileList
+    .filter(
+      (file): file is IFile =>
+        typeof file?.name === "string" && /^\d{4}\.sy$/.test(file.name),
+    )
+    .sort((a, b) => extractYear(b) - extractYear(a));
 }

@@ -12,9 +12,15 @@ export interface VueDialogOptions {
 export function open(component: Component, options: VueDialogOptions = {}) {
   const dialog = new Dialog({
     title: options.title ?? "弹窗",
-    width: options.width ?? "900px",
-    height: options.height ?? "600px",
-    content: `<div id="lg-dialog" style="height:100%"></div>`,
+    width:
+      (options.width ?? window.PersonalLedgerPlugHandler.isMobile)
+        ? "100%"
+        : "900px",
+    height:
+      (options.height ?? window.PersonalLedgerPlugHandler.isMobile)
+        ? "100%"
+        : "600px",
+    content: `<div id="lg-dialog" style="height:100%; overflow: auto;"></div>`,
   });
 
   const el = document.getElementById("lg-dialog");

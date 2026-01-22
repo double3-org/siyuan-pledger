@@ -4,16 +4,16 @@
       <thead>
         <tr>
           <!-- 用日期作为表头 -->
-          <th style="min-width: 80px;"></th>
-          <td style="min-width: 80px;"></td>
+          <th class="min-w-[80px] max-w-[80px] w-[80px]"></th>
+          <td class="min-w-[80px] max-w-[80px] w-[80px]"></td>
           <td v-for="t in times">{{ t }}</td>
         </tr>
       </thead>
       <tbody>
         <template v-for="(c, index) in conf">
           <tr v-for="(child, childIndex) in c.children">
-            <th :rowspan="c.children?.length" v-if="childIndex === 0">{{ c.name }}</th>
-            <td>{{ child.name }}</td>
+            <th class="min-w-[80px] max-w-[80px] w-[80px]" :rowspan="c.children?.length" v-if="childIndex === 0">{{ c.name }}</th>
+            <td class="min-w-[80px] max-w-[80px] w-[80px]">{{ child.name }}</td>
             <td v-for="(t, tIndex) in times">
               {{ tableData.dataList[index * (c.children?.length ?? 0) + childIndex][tIndex] }}
             </td>
