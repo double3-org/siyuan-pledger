@@ -2,6 +2,8 @@
 import { createApp, type Component } from "vue";
 import { Dialog } from "siyuan";
 
+let currentDialog: Dialog | null = null;
+
 export interface VueDialogOptions {
   title?: string;
   width?: string;
@@ -10,20 +12,28 @@ export interface VueDialogOptions {
 }
 
 export function open(component: Component, options: VueDialogOptions = {}) {
+
+  if (currentDialog) {
+    currentDialog.destroy();
+    currentDialog = null;
+  }
+
+  const mountId = `lg-dialog--${Date.now()}-${Math.random()}`;
+
   const dialog = new Dialog({
     title: options.title ?? "弹窗",
     width:
-      (options.width ?? window.PersonalLedgerPlugHandler.isMobile)
-        ? "100%"
-        : "900px",
+      options.width ??
+      (window.PersonalLedgerPlugHandler.isMobile ? "100%" : "900px"),
     height:
-      (options.height ?? window.PersonalLedgerPlugHandler.isMobile)
-        ? "100%"
-        : "600px",
-    content: `<div id="lg-dialog" style="height:100%; overflow: auto;"></div>`,
+      options.height ??
+      (window.PersonalLedgerPlugHandler.isMobile ? "100%" : "600px"),
+    content: `<div id="${mountId}" style="height:100%; overflow: auto;"></div>`,
   });
 
-  const el = document.getElementById("lg-dialog");
+  currentDialog = dialog;
+
+  const el = document.getElementById(mountId);
   if (!el) return;
 
   if (options.props) {
@@ -42,6 +52,7 @@ export function open(component: Component, options: VueDialogOptions = {}) {
   dialog.destroy = () => {
     app.unmount();
     oldDestroy();
+    currentDialog = null;
   };
 
   return dialog;

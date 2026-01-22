@@ -41,7 +41,7 @@
           </svg>
           {{ lItem.name }}
         </div>
-        <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-3 mx-3 mt-2 mb-4">
+        <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-1 md:grid-cols-3 mx-3 mt-2 mb-4">
           <div class="col-span-1" v-for="(lc, index) in lItem.children" :key="index">
             <fieldset class="fieldset">
               <legend class="fieldset-legend">{{ lc.name }}</legend>
