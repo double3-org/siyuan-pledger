@@ -40,6 +40,14 @@
             <use :xlink:href="`#${lItem.icon}`"></use>
           </svg>
           {{ lItem.name }}
+
+          <label class="btn btn-soft btn-primary btn-xs">
+            <svg class="h-4 w-4 stroke-current">
+              <use xlink:href="#iconD3AI"></use>
+            </svg>
+            AI 记
+            <input type="file" class="hidden"  />
+          </label>
         </div>
         <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-1 md:grid-cols-3 mx-3 mt-2 mb-4">
           <div class="col-span-1" v-for="(lc, index) in lItem.children" :key="index">
