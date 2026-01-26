@@ -46,7 +46,7 @@
               <use xlink:href="#iconD3AI"></use>
             </svg>
             AI 记
-            <input type="file" class="hidden"  />
+            <input type="file" class="hidden" @change="aiRecord(lItem, $event)" />
           </label>
         </div>
         <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-1 md:grid-cols-3 mx-3 mt-2 mb-4">
@@ -72,6 +72,7 @@
 import currency from "currency.js";
 import { ref } from 'vue';
 import { getCurrentTime } from "../api/siyuanApi"
+import { chatWithQwen } from "../api/aiApi"
 
 const emit = defineEmits<{
   (e: "update", value: LedgerItem[]): void
@@ -135,5 +136,27 @@ const update = () => {
 const close = () => {
   emit('close')
 }
+
+// 处理 AI 记录上传
+const aiRecord = (item: LedgerItem, event: Event) => {
+  const fileInput = event.target as HTMLInputElement
+  if (fileInput.files && fileInput.files.length > 0) {
+    const imageFile = fileInput.files[0]
+    // 检查文件是否为图片
+    if (!imageFile.type.startsWith('image/')) {
+      console.log('请上传图片文件')
+      return
+    }
+    // 调用 AI 接口
+    chatWithQwen(props.confData, item.name,imageFile)
+      .then(res => {
+        console.log(res)
+      })
+      .catch(err => {
+        console.error(err)
+      })
+  }
+}
+
 
 </script>

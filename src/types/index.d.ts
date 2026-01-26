@@ -9,6 +9,8 @@ declare global {
     documentId: string; // 账本所在文档 ID
     config: string; // 账本配置内容
     planNum: string; // 目标金额
+    apiKey: string; // 通义千问 API Key
+    modelName: string; // 通义千问模型名称
   }
 
   interface LedgerItem {

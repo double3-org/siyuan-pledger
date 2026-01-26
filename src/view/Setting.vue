@@ -40,6 +40,20 @@
         <textarea v-model="localSetting.config" type="text" placeholder="请填入配置"
           class="w-full px-3 textarea min-h-[180px]" />
       </div>
+
+      <label class="col-span-2 text-sm font-medium text-gray-700">
+        AI 配置
+        <p class="text-xs text-gray-500">
+          本插件调用阿里云通义千问, 请填写需要调用的模型名称和 API Key
+        </p>
+      </label>
+
+      <div class="col-span-4">
+        <div class="mb-2">
+          <input type="text" v-model="localSetting.modelName" placeholder="模型名称" class="w-full h-10 px-3 input" />
+        </div>
+        <input type="text" v-model="localSetting.apiKey" placeholder="API Key" class="w-full h-10 px-3 input" />
+      </div>
     </div>
 
     <div class="flex justify-end gap-5">
