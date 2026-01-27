@@ -30,7 +30,7 @@
               结果
             </label>
             <div class="col-span-5">
-              <span v-show="loading" class="loading loading-spinner loading-xs"></span>
+              <span v-show="loading"  class="loading loading-bars loading-xs"></span>
               <pre>{{ aiResult }}</pre>
             </div>
           </div>
