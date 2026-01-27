@@ -41,13 +41,12 @@
           </svg>
           {{ lItem.name }}
 
-          <label class="btn btn-soft btn-primary btn-xs">
+          <button class="btn btn-soft btn-primary btn-xs" @click="aiRecord(lItem)">
             <svg class="h-4 w-4 stroke-current">
               <use xlink:href="#iconD3AI"></use>
             </svg>
             AI 记
-            <input type="file" class="hidden" @change="aiRecord(lItem, $event)" />
-          </label>
+          </button>
         </div>
         <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-1 md:grid-cols-3 mx-3 mt-2 mb-4">
           <div class="col-span-1" v-for="(lc, index) in lItem.children" :key="index">
@@ -71,8 +70,9 @@
 <script setup lang="ts">
 import currency from "currency.js";
 import { ref } from 'vue';
-import { getCurrentTime } from "../api/siyuanApi"
-import { chatWithQwen } from "../api/aiApi"
+import { getCurrentTime } from "@/api/siyuanApi"
+import { open } from "@/utils/dialog-utils"
+import AI from '@/components/AI.vue'
 
 const emit = defineEmits<{
   (e: "update", value: LedgerItem[]): void
@@ -138,24 +138,39 @@ const close = () => {
 }
 
 // 处理 AI 记录上传
-const aiRecord = (item: LedgerItem, event: Event) => {
-  const fileInput = event.target as HTMLInputElement
-  if (fileInput.files && fileInput.files.length > 0) {
-    const imageFile = fileInput.files[0]
-    // 检查文件是否为图片
-    if (!imageFile.type.startsWith('image/')) {
-      console.log('请上传图片文件')
-      return
+const aiRecord = (item: LedgerItem) => {
+  // 打开 AI 组件
+  const dialog = open(AI, {
+    title: 'AI 记',
+    width: window.PersonalLedgerPlugHandler.isMobile ? "100%" : "700px",
+    height: window.PersonalLedgerPlugHandler.isMobile ? "100%" : "500px",
+    props: {
+      settingConfData: props.confData,
+      itemName: item.name,
+      onAiUpdate: (res: any) => {
+        // 如果 res 是 json 字符串需要转为对象
+        if (typeof res === 'string') {
+          try {
+            res = JSON.parse(res)
+          } catch (error) {
+            console.error('JSON 解析错误:', error)
+            return
+          }
+        }
+        // 赋值给 ledgerForm
+        ledgerForm.value.forEach(
+          (lItem) => {
+            if (lItem.name === item.name) {
+              for (const child of lItem.children) {
+                child.amount = res[child.name] || 0
+              }
+            }
+          }
+        )
+        dialog?.destroy()
+      }
     }
-    // 调用 AI 接口
-    chatWithQwen(props.confData, item.name,imageFile)
-      .then(res => {
-        console.log(res)
-      })
-      .catch(err => {
-        console.error(err)
-      })
-  }
+  })
 }
 
 

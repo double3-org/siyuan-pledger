@@ -2,8 +2,6 @@
 import { createApp, type Component } from "vue";
 import { Dialog } from "siyuan";
 
-let currentDialog: Dialog | null = null;
-
 export interface VueDialogOptions {
   title?: string;
   width?: string;
@@ -12,11 +10,6 @@ export interface VueDialogOptions {
 }
 
 export function open(component: Component, options: VueDialogOptions = {}) {
-
-  if (currentDialog) {
-    currentDialog.destroy();
-    currentDialog = null;
-  }
 
   const mountId = `lg-dialog--${Date.now()}-${Math.random()}`;
 
@@ -31,7 +24,6 @@ export function open(component: Component, options: VueDialogOptions = {}) {
     content: `<div id="${mountId}" style="height:100%; overflow: auto;"></div>`,
   });
 
-  currentDialog = dialog;
 
   const el = document.getElementById(mountId);
   if (!el) return;
@@ -52,7 +44,6 @@ export function open(component: Component, options: VueDialogOptions = {}) {
   dialog.destroy = () => {
     app.unmount();
     oldDestroy();
-    currentDialog = null;
   };
 
   return dialog;

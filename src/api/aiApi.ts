@@ -1,6 +1,6 @@
 export async function chatWithQwen(
   config: SettingConfig,
-  itemName: string,
+  prompt: string,
   file: File,
 ) {
   // 将图片转为 base64 编码
@@ -28,7 +28,7 @@ export async function chatWithQwen(
                 type: "image_url",
                 image_url: { url: `${base64Image}` },
               },
-              { type: "text", text: getPrompt(config, itemName) },
+              { type: "text", text: prompt },
             ],
           },
         ],
@@ -43,29 +43,6 @@ export async function chatWithQwen(
   }
 
   const data = await res.json();
-  return data.choices[0].message.content;
-}
-
-// 获取提示词
-export function getPrompt(config: SettingConfig, itemName: string) {
-  const configObj = JSON.parse(config.config);
-  const types =
-    configObj
-      .find((item: LedgerItem) => item?.name === itemName)
-      ?.children?.map((child: LedgerItem) => child?.name)
-      ?.filter(Boolean) ?? [];
-  let res = `你是一个图像内容分析器，请根据以下规则识别并每一项的金额。
-${types.join(", ")}
-规则：
-1. 如果没有请用 0.00 替代
-2. 去掉千分符
-3. 无法判断的对象请忽略，必须与我给的你名称一致才取数，没有的项不需要输出
-4. 只返回 JSON 不要输出任何解释
-返回示例：
-{
-  "${types[0]}": number,
-  "${types[1]}": number,
-  ...
-}`;
-  return res;
+  // 提取 JSON 字符串
+  return data.choices[0].message.content.replace(/```json|```/g, '').trim();
 }

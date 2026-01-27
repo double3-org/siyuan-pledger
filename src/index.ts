@@ -23,6 +23,8 @@ const settingConfData = ref<SettingConfig>({
   documentId: "",
   config: "",
   planNum: "",
+  apiKey: "",
+  modelName: "",
 });
 
 const icons = [
