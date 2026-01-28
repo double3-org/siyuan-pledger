@@ -41,7 +41,23 @@ function renderChart() {
   if (!chartInstance || !props.lineData) return;
   const option = {
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'time' },
+    xAxis: {
+      type: 'time',
+      minInterval: 24 * 60 * 60 * 1000,
+      axisLabel: {
+        interval: 'auto', // 关键
+        hideOverlap: true // 关键
+      }
+    },
+    axisLabel: {
+      formatter: (value: number) => {
+        const d = new Date(value)
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${y}-${m}-${day}`
+      }
+    },
     yAxis: {
       type: 'value',
       axisLine: { show: false },  // 轴线
