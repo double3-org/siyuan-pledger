@@ -1,5 +1,5 @@
 <template>
-  <div class="m-4">
+  <div class="m-4 double3-main">
     <div class="m-3">
       <div class="font-bold inline-flex items-center gap-2">
         <svg class="h-4 w-4 stroke-current">
@@ -9,28 +9,7 @@
         <span class="badge badge-neutral badge-xs">must</span>
       </div>
       <!-- 日期 -->
-      <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-3 mx-3 mt-2 mb-4">
-        <label class="input input-ghost w-fit">
-          <button class="btn btn-link no-underline h-auto min-h-0 px-1 leading-none" popovertarget="cally-popover"
-            style="anchor-name:--cally1">
-            {{ selectedDate }}
-          </button>
-        </label>
-      </div>
-
-      <!-- 日期选择器 -->
-      <div popover id="cally-popover" class="dropdown bg-base-100 rounded-box shadow-lg"
-        style="position-anchor:--cally1">
-        <calendar-date class="cally" @change="onDateChange">
-          <svg slot="previous" class="fill-current size-4">
-            <use xlink:href="#iconLeft"></use>
-          </svg>
-          <svg slot="next" class="fill-current size-4">
-            <use xlink:href="#iconRight"></use>
-          </svg>
-          <calendar-month></calendar-month>
-        </calendar-date>
-      </div>
+      <DatePicker class="ml-2 pl-4 mx-3 mt-2 mb-4 border-l border-gray-400" v-model="selectedDate" />
     </div>
 
     <div>
@@ -62,7 +41,7 @@
 
     <div class="flex justify-end gap-5 p-6">
       <button class="btn btn-outline btn-sm" @click="close">取消</button>
-      <button class="btn btn-info btn-sm" @click="update">保存</button>
+      <button class="btn btn-sm btn bg-[#1A77F2] text-white border-[#005fd8]" @click="update">保存</button>
     </div>
   </div>
 </template>
@@ -73,6 +52,7 @@ import { ref } from 'vue';
 import { getCurrentTime } from "@/api/siyuanApi"
 import { open } from "@/utils/dialog-utils"
 import AI from '@/components/AI.vue'
+import DatePicker from "@/components/custom/DatePicker.vue";
 
 const emit = defineEmits<{
   (e: "update", value: LedgerItem[]): void
@@ -86,7 +66,7 @@ const props = defineProps<{
   confData: SettingConfig // 配置数据
 }>();
 
-const selectedDate = ref()
+const selectedDate = ref('')
 getCurrentTime().then(res => selectedDate.value = res)
 
 if (props.ledgerData) {
@@ -94,11 +74,6 @@ if (props.ledgerData) {
   selectedDate.value = props.ledgerData[0].time || ''
 } else {
   newLedgerForm()
-}
-
-const onDateChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  selectedDate.value = target.value
 }
 
 // 根据 confData.config 初始化 newLedgerItem
@@ -172,6 +147,5 @@ const aiRecord = (item: LedgerItem) => {
     }
   })
 }
-
 
 </script>

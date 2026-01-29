@@ -56,9 +56,9 @@
       </div>
     </div>
 
-    <div class="flex justify-end gap-5">
+    <div class="flex justify-end gap-5 mt-6">
       <button class="btn btn-outline btn-sm" @click="closeSetting">取消</button>
-      <button class="btn btn-info btn-sm" @click="saveSettingData">保存</button>
+      <button class="btn btn-sm btn bg-[#1A77F2] text-white border-[#005fd8]" @click="saveSettingData">保存</button>
     </div>
   </div>
 </template>

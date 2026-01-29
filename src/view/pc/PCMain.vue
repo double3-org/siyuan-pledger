@@ -9,25 +9,23 @@
     <!-- 右侧 -->
     <div class="col-span-2">
       <!-- 顶部工具栏 -->
-      <div class="mb-2 flex items-center justify-between">
-        <div class="tabs tabs-box tabs-sm w-fit bg-transparent">
+      <div class="mb-2 items-center justify-between">
+        <div class="tabs tabs-box tabs-sm p-0 bg-transparent">
           <label class="tab font-bold">
             <input type="radio" name="pl-s-type" checked />
             最近记录
           </label>
 
           <label class="tab font-bold">
-            <input type="radio" name="pl-s-type" disabled />
+            <input type="radio" name="pl-s-type" />
             自定义
           </label>
-
-          <div class="tab-content">
-            <form>
-              <input class="btn" type="checkbox" name="frameworks" aria-label="Svelte" />
-              <input class="btn" type="checkbox" name="frameworks" aria-label="Vue" />
-              <input class="btn" type="checkbox" name="frameworks" aria-label="React" />
-              <input class="btn btn-square" type="reset" value="×" />
-            </form>
+          <!-- 自定义范围选择 -->
+          <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
+            <DatePicker class="inline-block" v-model="startDate" placeholder="起始日期"/>
+            <span class="px-2 font-bold">至</span>
+            <DatePicker class="inline-block mr-6" v-model="endDate" placeholder="结束日期" />
+            <button class="btn btn-sm bg-[#03C755] text-white border-[#00b544]" @click="search">查询</button>
           </div>
         </div>
       </div>
@@ -79,6 +77,7 @@ import Line from '@/components/bi/Line.vue';
 import Compare from '@/components/bi/Compare.vue';
 import Plan from '@/components/bi/Plan.vue';
 import Table from '@/components/bi/Table.vue';
+import DatePicker from '@/components/custom/DatePicker.vue';
 
 const props = defineProps<{
   settingConfData: SettingConfig // 配置数据
@@ -104,6 +103,14 @@ const planRate = ref<number>(0);
 // 表格数据
 const allTimeSet = ref<Set<string>>(new Set());
 const tableData = ref<LedgerItem[]>([]);
+
+// 自定义日期范围
+const startDate = ref('');
+const endDate = ref('');
+
+const search = () => {
+  console.log('应用日期范围:', startDate.value, '到', endDate.value);
+}
 
 // 获取页面数据
 initData()
@@ -165,9 +172,6 @@ async function initData() {
   // 右侧计划图, 计算计划完成率
   planRate.value = sum / (Number(props.settingConfData.planNum) ?? 1000000);
 }
-
-
-
 </script>
 
 <style lang="css">

@@ -1,5 +1,5 @@
 <template>
-  <Latest class="m-2" :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
+  <Latest data-theme="emerald" class="m-2" :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
     :accountDate="accountDate" @initData="initData"></Latest>
 </template>
 
