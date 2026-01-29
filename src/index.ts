@@ -11,7 +11,7 @@ import {
 } from "siyuan";
 import { createApp, ref } from "vue";
 
-import { open } from "./utils/dialog-utils";
+import { alert } from "./utils/dialog-utils";
 
 import SettingView from "./view/Setting.vue";
 import MainView from "./view/pc/PCMain.vue";
@@ -132,7 +132,7 @@ export default class PersonalLedgerPlug extends Plugin {
   openTab(): void {
     if (this.isMobile) {
       // 移动端弹窗打开
-      const mainView = open(MobileView, {
+      const mainView = alert(MobileView, {
         title: "pLedger",
         props: {
           settingConfData: settingConfData.value,

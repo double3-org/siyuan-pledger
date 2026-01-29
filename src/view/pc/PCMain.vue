@@ -12,17 +12,17 @@
       <div class="mb-2 items-center justify-between">
         <div class="tabs tabs-box tabs-sm p-0 bg-transparent">
           <label class="tab font-bold">
-            <input type="radio" name="pl-s-type" checked />
-            最近记录
+            <input type="radio" name="pl-s-type" checked value="lastYeat" @change="onTabChange" />
+            最近一年
           </label>
 
           <label class="tab font-bold">
-            <input type="radio" name="pl-s-type" />
+            <input type="radio" name="pl-s-type" value="custom" @change="onTabChange" />
             自定义
           </label>
           <!-- 自定义范围选择 -->
           <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
-            <DatePicker class="inline-block" v-model="startDate" placeholder="起始日期"/>
+            <DatePicker class="inline-block" v-model="startDate" placeholder="起始日期" />
             <span class="px-2 font-bold">至</span>
             <DatePicker class="inline-block mr-6" v-model="endDate" placeholder="结束日期" />
             <button class="btn btn-sm bg-[#03C755] text-white border-[#00b544]" @click="search">查询</button>
@@ -69,8 +69,11 @@
 
 <script setup lang="ts">
 import currency from "currency.js"
+
 import { ref } from 'vue';
 import { getYearDocs, getLedgerListByYearDocId } from '@/api/siyuanApi.js';
+import { showMessage } from 'siyuan';
+
 import Latest from '@/components/Latest.vue';
 import BIMain from '@/components/bi/BIMain.vue';
 import Line from '@/components/bi/Line.vue';
@@ -108,8 +111,62 @@ const tableData = ref<LedgerItem[]>([]);
 const startDate = ref('');
 const endDate = ref('');
 
-const search = () => {
-  console.log('应用日期范围:', startDate.value, '到', endDate.value);
+const search = async () => {
+  // 校验日期是否合法
+  if (!startDate.value) {
+    showMessage("起始日期不能为空", 2000, "info");
+    return;
+  }
+  if (!endDate.value) {
+    showMessage("结束日期不能为空", 2000, "info");
+    return;
+  }
+  if (startDate.value > endDate.value) {
+    showMessage("起始日期不能晚于结束日期", 2000, "info");
+    return;
+  }
+  // 查询数据，查询到的数据只渲染走势图和表格
+  // 获取年份
+  const startYear = startDate.value.split("-")[0];
+  const endYear = endDate.value.split("-")[0];
+  // 获取对应年份的文档
+  const yearDocs = await getYearDocs(props.settingConfData.documentId);
+  // 将起始和截至的年份变成连续的数组
+  const yearDocIds: string[] = [];
+  for (let y = Number(startYear); y <= Number(endYear); y++) {
+    const yearDoc = yearDocs.find(item => item.name.replace(".sy", "") == String(y));
+    if (yearDoc) {
+      yearDocIds.push(yearDoc.id);
+    }
+  }
+  // 循环获取数据
+  const data: LedgerItem[] = [];
+  for (const yearDocId of yearDocIds) {
+    const accountList = await getLedgerListByYearDocId(yearDocId, props.settingConfData);
+    // 遍历 accountList, 筛选出在日期范围内的数据
+    const filteredList = accountList.filter(item => {
+      if (!item.time) return false;
+      return item.time >= startDate.value && item.time <= endDate.value;
+    });
+    data.push(...filteredList);
+  }
+
+  tableData.value = data;
+  allTimeSet.value.clear();
+  const timeArr = data
+    .map(item => item.time)
+    .filter(Boolean) as string[];
+  const sortedTimes = [...new Set(timeArr)].sort((a, b) => b.localeCompare(a));
+  sortedTimes.forEach(time => allTimeSet.value.add(time));
+  // 计算折线图数据
+  const map = new Map<string, number>();
+  for (const item of data) {
+    if (!item.time) continue;
+    const prev = map.get(item.time) ?? 0;
+    map.set(item.time, prev + item.amount);
+  }
+  lineData.value = Array.from(map.entries()).map(([time, value]) => ({ time, value }));
+  console.log(lineData.value);
 }
 
 // 获取页面数据
@@ -171,6 +228,16 @@ async function initData() {
   rateDiff.value = secondSum === 0 ? 0 : currency(accountDiff.value, { precision: 4 }).divide(Math.abs(secondSum)).multiply(100).value;
   // 右侧计划图, 计算计划完成率
   planRate.value = sum / (Number(props.settingConfData.planNum) ?? 1000000);
+}
+
+const onTabChange = (e: any) => {
+  const tabValue = e.target.value;
+  if (tabValue === 'lastYeat') {
+    initData();
+  } else if (tabValue === 'custom') {
+    startDate.value = '';
+    endDate.value = '';
+  }
 }
 </script>
 

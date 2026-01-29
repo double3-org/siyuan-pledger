@@ -39,24 +39,27 @@ function initChart() {
  */
 function renderChart() {
   if (!chartInstance || !props.lineData) return;
+
+  // 数据排序
+  const sortedData = [...props.lineData].sort(
+    (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+  )
+
   const option = {
-    tooltip: { trigger: 'axis' },
     xAxis: {
       type: 'time',
       minInterval: 24 * 60 * 60 * 1000,
       axisLabel: {
         interval: 'auto', // 关键
-        hideOverlap: true // 关键
-      }
-    },
-    axisLabel: {
-      formatter: (value: number) => {
-        const d = new Date(value)
-        const y = d.getFullYear()
-        const m = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${y}-${m}-${day}`
-      }
+        hideOverlap: true, // 关键
+        formatter: (value: number) => {
+          const d = new Date(value)
+          const y = d.getFullYear()
+          const m = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${y}-${m}-${day}`
+        }
+      },
     },
     yAxis: {
       type: 'value',
@@ -74,11 +77,29 @@ function renderChart() {
       right: 10
       // outerBounds: true
     },
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const [time, value] = params[0].value
+        const d = new Date(time)
+
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+
+        return `
+      <div>
+        <div>${y}-${m}-${day}</div>
+        <div>数值：${value}</div>
+      </div>
+    `
+      }
+    },
     series: [
       {
         type: 'line',
         smooth: true,
-        data: props.lineData.map(item => [item.time, item.value])
+        data: sortedData.map(i => [i.time, i.value])
       }
     ]
   }

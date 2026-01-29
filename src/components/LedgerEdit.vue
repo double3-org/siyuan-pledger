@@ -50,7 +50,7 @@
 import currency from "currency.js";
 import { ref } from 'vue';
 import { getCurrentTime } from "@/api/siyuanApi"
-import { open } from "@/utils/dialog-utils"
+import { alert } from "@/utils/dialog-utils"
 import AI from '@/components/AI.vue'
 import DatePicker from "@/components/custom/DatePicker.vue";
 
@@ -115,7 +115,7 @@ const close = () => {
 // 处理 AI 记录上传
 const aiRecord = (item: LedgerItem) => {
   // 打开 AI 组件
-  const dialog = open(AI, {
+  const dialog = alert(AI, {
     title: 'AI 记',
     width: window.PersonalLedgerPlugHandler.isMobile ? "100%" : "700px",
     height: window.PersonalLedgerPlugHandler.isMobile ? "100%" : "500px",
@@ -147,5 +147,4 @@ const aiRecord = (item: LedgerItem) => {
     }
   })
 }
-
 </script>

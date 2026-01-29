@@ -9,7 +9,7 @@ export interface VueDialogOptions {
   props?: Record<string, any>; // 传给 Vue 组件的 props
 }
 
-export function open(component: Component, options: VueDialogOptions = {}) {
+export function alert(component: Component, options: VueDialogOptions = {}) {
 
   const mountId = `lg-dialog--${Date.now()}-${Math.random()}`;
 

@@ -86,7 +86,7 @@ const emit = defineEmits<{
 }>()
 
 import LedgerEdit from './LedgerEdit.vue';
-import { open } from "../utils/dialog-utils.js"
+import { alert } from "../utils/dialog-utils.js"
 
 const props = defineProps<{
   settingConfData: SettingConfig, // 配置数据
@@ -97,7 +97,7 @@ const props = defineProps<{
 
 // 新增资产记录
 const addLedgerItem = () => {
-  const ledgerEditDialog = open(LedgerEdit, {
+  const ledgerEditDialog = alert(LedgerEdit, {
     title: "新增资产记录",
     props: {
       confData: props.settingConfData,
