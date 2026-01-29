@@ -49,7 +49,7 @@
       </div>
     </div>
     <!-- 详细列表 -->
-    <div class="mt-2">
+    <div class="mt-2 overflow-y-auto overflow-x-hidden max-h-[624px]">
       <ul class="list bg-base-100">
         <li class="list-row gap-x-3 gap-y-1 items-center px-[6px] py-[10px]" v-for="(acc, index) in latestLedgerList"
           :key="index">

@@ -1,5 +1,5 @@
 <template>
-  <div data-theme="emerald" class="double3-main grid grid-cols-3 gap-4 p-4 pt-6">
+  <div data-theme="emerald" class="double3-main grid grid-cols-3 gap-4 pr-4 pt-6 pb-4">
     <!-- 左侧 -->
     <div class="col-span-1 lg:px-6">
       <Latest :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
