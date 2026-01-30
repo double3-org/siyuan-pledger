@@ -10,8 +10,3 @@
 `npx make-link-win` 创建软连接 **OR** `npx make-install` 复制文件到思源工作区 
 
 `npx check-link` 检查状态
-
-
-[plugin-sample-vite 参考文件](https://github.com/frostime/plugin-sample-vite/blob/main/README_zh_CN.md)
-
-[siyuan-plugin-cli 参考文件](https://github.com/frostime/siyuan-plugin-cli/blob/main/README.zh-CN.md)

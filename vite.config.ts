@@ -105,12 +105,6 @@ export default defineConfig({
   },
 });
 
-/**
- * Clean up some dist files after compiled
- * @author frostime
- * @param options:
- * @returns
- */
 function cleanupDistFiles(options: { patterns: string[]; distDir: string }) {
   const { patterns, distDir } = options;
 

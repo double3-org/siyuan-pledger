@@ -5,7 +5,7 @@
   "description": "A personal ledger plugin for SiYuan.",
   "repository": "https://github.com/double3-org/siyuan-pledger",
   "homepage": "https://github.com/double3-org/siyuan-pledger/blob/main/README.md",
-  "author": "frostime",
+  "author": "limian",
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development VITE_SOURCEMAP=inline vite build --watch",
