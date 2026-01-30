@@ -11,16 +11,15 @@
     "all"
   ],
   "displayName": {
-    "en_US": "pledger",
-    "zh_CN": "pledger"
+    "default": "pledger",
+    "zh_CN": "账本"
   },
   "description": {
-    "en_US": "A personal ledger plugin for SiYuan.",
+    "default": "A personal ledger plugin for SiYuan.",
     "zh_CN": "一个基于思源笔记的账本插件"
   },
   "readme": {
-    "en_US": "README.md",
-    "zh_CN": "README_zh_CN.md"
+    "default": "README.md"
   },
   "funding": {
     "custom": [
