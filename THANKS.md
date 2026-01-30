@@ -36,7 +36,6 @@
   `@vitejs/plugin-vue`、`TypeScript`、`vue-tsc`、`ts-node`、`@types/node`、`cross-env`、`autoprefixer`、`fast-glob`、`minimist`、`rollup-plugin-livereload`、`vite-plugin-static-copy`、`vite-plugin-zip-pack` 等构建工具
 
 
-
 ## 特别感谢（Special Thanks）
 
 - **SiYuan（思源笔记）项目及其社区**  
@@ -55,6 +54,13 @@
   一个能理解需求、调动工具、独立完成各类开发任务的超级 AI 开发工程师，助你高效推进项目每一步
    [去看看](https://www.trae.cn/) 
 
+- **Cent**
+  一个完全免费、开源的多人协作记账 Web App
+   [去看看](https://github.com/glink25/Cent) 
+
+
 ---
+
+本项目基于 MIT 协议开源
 
 如有遗漏或需要补充致谢的项目，欢迎提出 Issue 或 PR

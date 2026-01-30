@@ -17,11 +17,14 @@
 
 
 ## 特别鸣谢
+
 项目使用 `Vue`、`Tailwind CSS`、`@tailwindcss/vite`、`DaisyUI`、`ECharts`、`cally`、`currency.js` 等框架或第三方库实现具体业务功能
 
 在开发与构建时使用了 `Vite`、`@vitejs/plugin-vue`、`TypeScript`、`vue-tsc`、`ts-node`、`@types/node`、`cross-env`、`autoprefixer`、`fast-glob`、`minimist`、`rollup-plugin-livereload`、`vite-plugin-static-copy`、`vite-plugin-zip-pack` 等构建工具或开发依赖
 
 特别感谢 `SiYuan` 项目及其社区、`plugin-sample-vite`、`siyuan-plugin-cli` 以及`TRAE` 对本项目的开发提供的重要支持
+
+本项目的UI设计受到[Cent](https://github.com/glink25/Cent)项目的启发
 
 [查看全部鸣谢](https://github.com/double3-org/siyuan-pledger/blob/main/THANKS.md)
 
