@@ -1,7 +1,7 @@
 {
   "name": "siyuan-pledger",
   "author": "li.mian",
-  "url": "https://github.com/d3-double3/siyuan-pledger.git",
+  "url": "https://github.com/double3-org/siyuan-pledger",
   "version": "0.0.1",
   "minAppVersion": "3.2.1",
   "backends": [
@@ -16,7 +16,7 @@
   },
   "description": {
     "en_US": "A personal ledger plugin for SiYuan.",
-    "zh_CN": "A personal ledger plugin for SiYuan."
+    "zh_CN": "一个基于思源笔记的账本插件"
   },
   "readme": {
     "en_US": "README.md",
@@ -24,7 +24,7 @@
   },
   "funding": {
     "custom": [
-      ""
+      "https://afdian.com/a/limian"
     ]
   },
   "keywords": [

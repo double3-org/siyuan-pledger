@@ -1,10 +1,10 @@
 {
-  "name": "plugin-sample-vite",
-  "version": "0.4.1",
+  "name": "siyuan-pledger",
+  "version": "0.0.1",
   "type": "module",
-  "description": "This is a sample plugin based on vite and svelte for Siyuan (https://b3log.org/siyuan)",
-  "repository": "https://github.com/frostime/plugin-sample-vite",
-  "homepage": "",
+  "description": "A personal ledger plugin for SiYuan.",
+  "repository": "https://github.com/double3-org/siyuan-pledger",
+  "homepage": "https://github.com/double3-org/siyuan-pledger/blob/main/README.md",
   "author": "frostime",
   "license": "MIT",
   "scripts": {
@@ -17,8 +17,7 @@
     "currency.js": "^2.0.4",
     "echarts": "^6.0.0",
     "tailwindcss": "^4.1.17",
-    "vue": "^3.5.25",
-    "vue-debounce": "^5.0.1"
+    "vue": "^3.5.25"
   },
   "devDependencies": {
     "@types/node": "^20.3.0",
@@ -27,7 +26,6 @@
     "cross-env": "^7.0.3",
     "daisyui": "^5.5.8",
     "fast-glob": "^3.2.12",
-    "glob": "^10.0.0",
     "minimist": "^1.2.8",
     "rollup-plugin-livereload": "^2.0.5",
     "siyuan": "1.1.5",
