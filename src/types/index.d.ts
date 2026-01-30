@@ -1,10 +1,6 @@
 export {};
 
 declare global {
-  interface Window {
-    PersonalLedgerPlugHandler: PersonalLedgerPlug;
-  }
-
   interface SettingConfig {
     documentId: string; // 账本所在文档 ID
     config: string; // 账本配置内容

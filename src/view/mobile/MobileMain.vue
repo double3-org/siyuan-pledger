@@ -1,6 +1,6 @@
 <template>
   <Latest data-theme="emerald" class="m-2" :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
-    :accountDate="accountDate" @initData="initData"></Latest>
+    :accountDate="accountDate" :isMobile="true" @initData="initData"></Latest>
 </template>
 
 <script setup lang="ts">

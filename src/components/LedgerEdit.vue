@@ -63,7 +63,8 @@ const ledgerForm = ref<LedgerItem[]>([])
 
 const props = defineProps<{
   ledgerData?: LedgerItem[], // 账本数据
-  confData: SettingConfig // 配置数据
+  confData: SettingConfig, // 配置数据
+  isMobile?: boolean // 是否为移动端
 }>();
 
 const selectedDate = ref('')
@@ -117,8 +118,8 @@ const aiRecord = (item: LedgerItem) => {
   // 打开 AI 组件
   const dialog = alert(AI, {
     title: 'AI 记',
-    width: window.PersonalLedgerPlugHandler.isMobile ? "100%" : "700px",
-    height: window.PersonalLedgerPlugHandler.isMobile ? "100%" : "500px",
+    width: props.isMobile ? "100%" : "700px",
+    height: props.isMobile ? "100%" : "500px",
     props: {
       settingConfData: props.confData,
       itemName: item.name,

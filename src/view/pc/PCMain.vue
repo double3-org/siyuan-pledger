@@ -3,7 +3,7 @@
     <!-- 左侧 -->
     <div class="col-span-1 lg:px-6">
       <Latest :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
-        :accountDate="accountDate" @initData="initData"></Latest>
+        :accountDate="accountDate" :isMobile="false" @initData="initData"></Latest>
     </div>
 
     <!-- 右侧 -->

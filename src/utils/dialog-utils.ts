@@ -7,20 +7,22 @@ export interface VueDialogOptions {
   width?: string;
   height?: string;
   props?: Record<string, any>; // 传给 Vue 组件的 props
+  isMobile?: boolean; // 是否为移动端
 }
 
 export function alert(component: Component, options: VueDialogOptions = {}) {
 
   const mountId = `lg-dialog--${Date.now()}-${Math.random()}`;
+  const isMobile = options.isMobile ?? false;
 
   const dialog = new Dialog({
     title: options.title ?? "弹窗",
     width:
       options.width ??
-      (window.PersonalLedgerPlugHandler.isMobile ? "100%" : "900px"),
+      (isMobile ? "100%" : "900px"),
     height:
       options.height ??
-      (window.PersonalLedgerPlugHandler.isMobile ? "100%" : "600px"),
+      (isMobile ? "100%" : "600px"),
     content: `<div id="${mountId}" style="height:100%; overflow: auto;"></div>`,
   });
 

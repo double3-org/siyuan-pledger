@@ -92,15 +92,18 @@ const props = defineProps<{
   settingConfData: SettingConfig, // 配置数据
   accountDate: string, // 账户日期
   latestLedgerList: LedgerItem[], // 最新资产列表
-  accountTotal: string // 资产总额
+  accountTotal: string, // 资产总额
+  isMobile?: boolean // 是否为移动端
 }>();
 
 // 新增资产记录
 const addLedgerItem = () => {
   const ledgerEditDialog = alert(LedgerEdit, {
     title: "新增资产记录",
+    isMobile: props.isMobile,
     props: {
       confData: props.settingConfData,
+      isMobile: props.isMobile,
       onUpdate: (item: LedgerItem[]) => {
         saveData(item).then(() => {
           showMessage("保存成功", 3000, "info");

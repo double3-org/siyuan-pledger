@@ -106,13 +106,15 @@ export default class PersonalLedgerPlug extends Plugin {
       },
     });
 
+    const self = this;
+
     function closeSetting() {
       dialog.destroy();
     }
 
     function saveSetting(settingData: SettingConfig) {
       if (checkSettingConf(settingData)) {
-        window.PersonalLedgerPlugHandler.saveData(settingConfFile, settingData);
+        self.saveData(settingConfFile, settingData);
         settingConfData.value = settingData;
         showMessage("设置已保存", 2000, "info");
         closeSetting();
@@ -168,9 +170,6 @@ export default class PersonalLedgerPlug extends Plugin {
       this.addIcons(icon);
     });
 
-    // 将该实例注册到全局
-    window.PersonalLedgerPlugHandler = this;
-
     const frontEnd = getFrontend();
     this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
@@ -194,11 +193,12 @@ export default class PersonalLedgerPlug extends Plugin {
   }
 
   async onunload() {
-    //当插件被禁用的时候，会自动调用这个函数
+    
   }
 
   async uninstall() {
-    //当插件被卸载的时候，会自动调用这个函数
+    // 卸载插件时删除插件数据
+    this.removeData(settingConfFile);
   }
 }
 
