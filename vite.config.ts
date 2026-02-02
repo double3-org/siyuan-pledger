@@ -5,7 +5,7 @@ import livereload from "rollup-plugin-livereload";
 import zipPack from "vite-plugin-zip-pack";
 import fg from "fast-glob";
 import vue from "@vitejs/plugin-vue";
-import tailwindcss from "@tailwindcss/vite";
+
 
 const env = process.env;
 const isSrcmap = env.VITE_SOURCEMAP === "inline";
@@ -32,7 +32,6 @@ export default defineConfig({
         },
       },
     }),
-    tailwindcss(),
     viteStaticCopy({
       targets: [
         { src: "./README*.md", dest: "./" },
@@ -72,7 +71,7 @@ export default defineConfig({
                     "./plugin.json",
                   ]);
                   for (let file of files) {
-                    this.addWatchFile(file);
+                    (this as any).addWatchFile(file);
                   }
                 },
               },
@@ -95,10 +94,10 @@ export default defineConfig({
       output: {
         entryFileNames: "[name].js",
         assetFileNames: (assetInfo) => {
-          if (assetInfo.name === "style.css") {
+          if (assetInfo.names?.includes("style.css")) {
             return "index.css";
           }
-          return assetInfo.name;
+          return assetInfo.names?.[0] ?? "assets/[name][extname]";
         },
       },
     },
