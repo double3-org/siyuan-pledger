@@ -1,30 +1,30 @@
 <!-- 最新数据的展示组件，用于移动端首页和PC端左侧资产展示 -->
 <template>
-  <div class="grid">
+  <div class="pl-latest-main">
     <!-- 顶部工具栏 -->
-    <div class="mb-2 flex items-center justify-between">
+    <div class="pl-latest-top">
       <!-- 功能切换 -->
-      <div class="tabs tabs-box tabs-sm w-fit bg-transparent">
-        <label class="tab font-bold">
+      <div class="pl-tabs">
+        <label>
           <input type="radio" name="pl-type" checked />
-          <svg class="h-3 w-3 mr-1 stroke-current">
+          <svg>
             <use xlink:href="#iconD3DB"></use>
           </svg>
           资产
         </label>
 
-        <label class="tab font-bold">
+        <label>
           <input type="radio" name="pl-type" disabled />
-          <svg class="h-3 w-3 mr-1 stroke-current">
+          <svg>
             <use xlink:href="#iconD3List"></use>
           </svg>
           记账
         </label>
       </div>
 
-      <!-- 添加按钮 -->
-      <button class="btn btn-sm" @click="addLedgerItem">
-        <svg class="h-3 w-3 mr-1 stroke-current">
+      <!-- 添加按钮, 靠右 -->
+      <button class="pl-button" style="margin-left: auto;" @click="addLedgerItem">
+        <svg>
           <use xlink:href="#iconAdd"></use>
         </svg>
         新建
@@ -32,42 +32,35 @@
     </div>
 
     <!-- 资产总览 -->
-    <div class="card bg-base-100 card-border border-base-300 w-full">
-      <div class="stats bg-base-100 w-full overflow-hidden shadow-[0_.1rem_.5rem_-.3rem_#0003]">
-        <div class="stat py-2 px-4 w-auto">
-          <div class="font-semibold">总资产</div>
-          <div class="stat-value text-2xl text-right leading-none">
-            {{ accountTotal }}
-          </div>
-          <div class="stat-desc flex items-center gap-1">
-            <svg class="h-3 w-3 stroke-current">
-              <use xlink:href="#iconD3TimeIcon"></use>
-            </svg>
-            {{ accountDate }}
-          </div>
-        </div>
+    <div class="pl-card">
+      <div class="pl-card-title">总资产</div>
+      <div class="pl-card-content">
+        {{ accountTotal }}
+      </div>
+      <div class="pl-card-footer">
+        <svg>
+          <use xlink:href="#iconD3TimeIcon"></use>
+        </svg>
+        {{ accountDate }}
       </div>
     </div>
-    <!-- 详细列表 -->
-    <div class="mt-2 overflow-y-auto overflow-x-hidden max-h-[624px]">
-      <ul class="list bg-base-100">
-        <li class="list-row gap-x-3 gap-y-1 items-center px-[6px] py-[10px]" v-for="(acc, index) in latestLedgerList"
-          :key="index">
-          <div>
-            <svg class="h-6 w-6 stroke-current">
-              <use :xlink:href="`#${acc.icon}`"></use>
-            </svg>
-          </div>
-          <div>
-            <div class="font-semibold">{{ acc.amount.toFixed(2) }}</div>
-            <div class="text-xs uppercase opacity-60">{{ acc.name }}</div>
-          </div>
-          <p class="list-col-wrap text-xs col-start-2 col-end-5">
-            {{acc.children?.map(c => `${c.name}:${c.amount ?? 0}`).join(', ')}}
-          </p>
 
-          <button class="btn btn-square btn-ghost">
-            <svg class="h-4 w-4 stroke-current">
+    <!-- 详细列表 -->
+    <div class="pl-latest-list">
+      <ul>
+        <li v-for="(acc, index) in latestLedgerList" :key="index">
+          <svg>
+            <use :xlink:href="`#${acc.icon}`"></use>
+          </svg>
+          <div>
+            <div class="pl-latest-list-text1">{{ acc.amount.toFixed(2) }}</div>
+            <div class="pl-card-footer">{{ acc.name }}</div>
+            <div class="pl-latest-list-text2">
+              {{acc.children?.map(c => `${c.name}:${c.amount ?? 0}`).join(', ')}}
+            </div>
+          </div>
+          <button>
+            <svg>
               <use xlink:href="#iconD3EidtIcon"></use>
             </svg>
           </button>
@@ -147,12 +140,85 @@ async function saveData(item: LedgerItem[]): Promise<void> {
   // 锁定文件
   blockDocument(yearDocumentId)
 }
-
 </script>
 
-<style lang="css">
-.tabs-box> :is(label:has(:checked)) {
-  color: #fff;
-  background-color: #000000;
+<style scoped lang="css">
+.pl-latest-main {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pl-latest-top {
+  display: flex;
+  align-items: center;
+}
+
+.pl-card-footer {
+  font-size: 0.75rem;
+  color: #9ea2ab;
+}
+
+.pl-card-footer svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.pl-card-content {
+  text-align: right;
+  font-size: 1.6rem;
+  line-height: 1.5rem;
+  font-weight: bold;
+}
+
+.pl-latest-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 624px;
+}
+
+.pl-latest-list svg {
+  height: 1.75rem;
+  width: 1.75rem;
+  padding-top: 0.25rem;
+}
+
+.pl-latest-list li {
+  word-break: break-word;
+  grid-auto-flow: column;
+  grid-template-columns: minmax(0, auto) 1fr;
+  gap: 1rem;
+  margin: 0 1rem 1rem;
+  padding-bottom: 0.5rem;
+  display: grid;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pl-latest-list button {
+  height: 2rem;
+  width: 2rem;
+  border: none;
+  background-color: transparent;
+  border-radius: 0.25rem;
+}
+
+.pl-latest-list button:hover {
+  border: none;
+  background-color: #e5e7eb;
+}
+
+.pl-latest-list button svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.pl-latest-list-text1 {
+  font-weight: bold;
+  margin-bottom: 0.25rem;
+  font-size: 1rem;
+}
+
+.pl-latest-list-text2 {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
 }
 </style>

@@ -1,14 +1,13 @@
 <template>
-  <div class="double3-main p-6 bg-white rounded-lg shadow-sm">
-    <div class="grid grid-cols-6 gap-4 items-center items-stretch">
-
+  <div class="pl-setting-main">
+    <div class="pl-setting-form">
       <label class="col-span-2 text-sm font-medium text-gray-700">
         数据存放位置
         <p class="text-xs text-gray-500">请复制文档id到此处, 请不要频繁调整该配置</p>
       </label>
 
       <div class="col-span-4">
-        <input type="text" v-model="localSetting.documentId" placeholder="文档id" class="w-full h-10 px-3 input" />
+        <input type="text" v-model="localSetting.documentId" placeholder="文档id" class="pl-form-input" />
       </div>
 
       <label class="col-span-2 text-sm font-medium text-gray-700">
@@ -17,7 +16,7 @@
       </label>
 
       <div class="col-span-4">
-        <input type="text" v-model="localSetting.planNum" placeholder="目标金额" class="w-full h-10 px-3 input" />
+        <input type="text" v-model="localSetting.planNum" placeholder="目标金额" class="pl-form-input" />
       </div>
 
       <label class="col-span-2 text-sm font-medium text-gray-700">
@@ -37,8 +36,7 @@
       </label>
 
       <div class="col-span-4">
-        <textarea v-model="localSetting.config" type="text" placeholder="请填入配置"
-          class="w-full px-3 textarea min-h-[180px]" />
+        <textarea v-model="localSetting.config" type="text" placeholder="请填入配置" class="pl-form-textarea" />
       </div>
 
       <label class="col-span-2 text-sm font-medium text-gray-700">
@@ -50,15 +48,16 @@
 
       <div class="col-span-4">
         <div class="mb-2">
-          <input type="text" v-model="localSetting.modelName" placeholder="模型名称" class="w-full h-10 px-3 input" />
+          <input type="text" v-model="localSetting.modelName" placeholder="模型名称" class="pl-form-input"
+            style="margin-bottom: 0.5rem;" />
         </div>
-        <input type="text" v-model="localSetting.apiKey" placeholder="API Key" class="w-full h-10 px-3 input" />
+        <input type="text" v-model="localSetting.apiKey" placeholder="API Key" class="pl-form-input" />
       </div>
     </div>
 
-    <div class="flex justify-end gap-5 mt-6">
-      <button class="btn btn-outline btn-sm" @click="closeSetting">取消</button>
-      <button class="btn btn-sm btn bg-[#1A77F2] text-white border-[#005fd8]" @click="saveSettingData">保存</button>
+    <div class="pl-setting-footer">
+      <button class="pl-button" @click="closeSetting">取消</button>
+      <button class="pl-button" style="background-color: #422ad5; color: #fff;" @click="saveSettingData">保存</button>
     </div>
   </div>
 </template>
@@ -85,4 +84,41 @@ const saveSettingData = () => {
 };
 </script>
 
-<style lang="css"></style>
+<style scoped lang="css">
+.pl-setting-main {
+  padding: 1rem 1.5rem;
+}
+
+.pl-setting-form {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 1rem;
+}
+
+.pl-setting-form label {
+  font-weight: bold;
+}
+
+.pl-setting-form p,
+.pl-setting-form pre {
+  font-weight: lighter;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.pl-setting-form input,
+.pl-setting-form textarea {
+  width: 66%;
+}
+
+.pl-setting-form textarea {
+  height: 88%;
+}
+
+.pl-setting-footer {
+  display: flex;
+  justify-content: end;
+  gap: 1rem;
+}
+</style>

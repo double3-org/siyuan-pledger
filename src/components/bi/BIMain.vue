@@ -1,6 +1,6 @@
 <template>
-  <div class="card bg-base-100 card-border border-base-300 w-full py-2 px-4">
-    <div class="card-title">
+  <div class="pl-bi-main">
+    <div class="pl-bi-main-title">
       <slot name="title"></slot>
     </div>
     <div class="card-body p-0">
@@ -12,4 +12,15 @@
 <script setup lang="ts">
 </script>
 
-<style lang="css"></style>
+<style scoped lang="css">
+.pl-bi-main {
+  border: 1px solid #e6e6e7;
+  border-radius: .5rem;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.pl-bi-main-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+</style>

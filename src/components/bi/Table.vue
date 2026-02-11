@@ -1,21 +1,23 @@
 <template>
-  <div class="overflow-x-auto h-112 w-96">
+  <div class="pl-table-main ">
     <table class="table table-xs table-pin-rows table-pin-cols">
       <thead>
         <tr>
-          <th class="w-[80px] min-w-[80px] max-w-[80px]"></th>
-          <td class="w-[80px] min-w-[80px] max-w-[80px]"></td>
-          <td v-for="t in times" :key="t">{{ t }}</td>
+          <th class="table-left-width table-top-left-cross-1"></th>
+          <th class="table-left-width table-top-left-cross-2"></th>
+          <th v-for="t in times" :key="t">
+            <span>{{ t }} </span>
+          </th>
         </tr>
       </thead>
 
       <tbody>
         <tr v-for="(row, rowIndex) in tableRows" :key="rowIndex" :class="{ 'bg-gray-100': row.isEvenGroup }">
-          <th v-if="row.rowspan" :rowspan="row.rowspan" class="w-[80px] min-w-[80px] max-w-[80px]"
+          <th v-if="row.rowspan" :rowspan="row.rowspan" class="table-left-width table-left-1"
             :class="{ 'bg-gray-100': row.isEvenGroup }">
             {{ row.groupName }}
           </th>
-          <td class="w-[80px] min-w-[80px] max-w-[80px]">
+          <td class="table-left-width table-left-2">
             {{ row.childName }}
           </td>
           <td v-for="(cell, i) in row.values" :key="i">
@@ -26,12 +28,12 @@
 
       <tfoot>
         <tr>
-          <th>
-            <span class="py-2 text-black">总计 </span>
+          <th class="table-bottom-left-cross-1">
+            <span>总计</span>
           </th>
-          <td></td>
+          <th class="table-bottom-left-cross-2"></th>
           <td v-for="(sum, i) in sumList" :key="i">
-            <span class="py-2 text-black">
+            <span>
               {{ sum }}
             </span>
           </td>
@@ -94,7 +96,7 @@ const tableResult = computed(() => {
           item.children.forEach((ci) => {
             if (ci.name === child.name) {
               cell = currency(ci.amount, { symbol: '' }).format()
-              sumMap[tIndex] += ci.amount   // ✅ 永远基于 number
+              sumMap[tIndex] += ci.amount
             }
           })
         })
@@ -134,3 +136,129 @@ const sumList = computed(() =>
   )
 )
 </script>
+
+<style scoped lang="css">
+.pl-table-main {
+  height: 26.5rem;
+  overflow: auto;
+  position: relative;
+  background: #fff;
+}
+
+.pl-table-main table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.pl-table-main th,
+.pl-table-main td {
+  white-space: nowrap;
+  text-align: right;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pl-table-main th {
+  font-weight: 600;
+  text-align: center;
+  background: #fff;
+}
+
+.table-left-width {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+.pl-table-main thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+.pl-table-main tfoot td,
+.pl-table-main tfoot th {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: #fff;
+  font-weight: 600;
+}
+
+.table-left-1 {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  background: #fff;
+}
+
+.table-left-2 {
+  position: sticky;
+  left: 80px;
+  z-index: 1;
+  text-align: left;
+  background: #fff;
+}
+
+.pl-table-main .table-top-left-cross-1 {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+.pl-table-main .table-top-left-cross-2 {
+  position: sticky;
+  top: 0;
+  left: 80px;
+  z-index: 2;
+  background: #fff;
+}
+
+.pl-table-main .table-bottom-left-cross-1 {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+.pl-table-main .table-bottom-left-cross-2 {
+  position: sticky;
+  bottom: 0;
+  left: 80px;
+  z-index: 2;
+  background: #fff;
+}
+
+.pl-table-main tr.bg-gray-100 td,
+.pl-table-main tr.bg-gray-100 th {
+  background-color: #f5f5f5;
+}
+
+.pl-table-main tr.bg-gray-100 .table-left-1,
+.pl-table-main tr.bg-gray-100 .table-left-2 {
+  background-color: #f5f5f5;
+}
+
+.pl-table-main td {
+  padding: 0.4rem 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pl-table-main tfoot td {
+  color: #111827;
+}
+
+tfoot th,
+tfoot td {
+  border-top: 1px solid #e5e7eb;
+}
+
+thead span {
+  margin-bottom: 0.5rem;
+  display: block;
+}
+</style>

@@ -48,18 +48,20 @@ function renderChart() {
   const option = {
     xAxis: {
       type: 'time',
-      minInterval: 24 * 60 * 60 * 1000,
-      axisLabel: {
-        interval: 'auto', // 关键
-        hideOverlap: true, // 关键
-        formatter: (value: number) => {
-          const d = new Date(value)
-          const y = d.getFullYear()
-          const m = String(d.getMonth() + 1).padStart(2, '0')
-          const day = String(d.getDate()).padStart(2, '0')
-          return `${y}-${m}-${day}`
-        }
-      },
+      // minInterval: 24 * 60 * 60 * 1000,
+      // boundaryGap: false,
+      // axisLabel: {
+      //   interval: 'auto',
+      //   alignMinLabel: true, // ★ 关键
+      //   hideOverlap: true,
+      //   formatter: (value: number) => {
+      //     const d = new Date(value)
+      //     const y = d.getFullYear()
+      //     const m = String(d.getMonth() + 1).padStart(2, '0')
+      //     const day = String(d.getDate()).padStart(2, '0')
+      //     return `${y}-${m}-${day}`
+      //   }
+      // },
     },
     yAxis: {
       type: 'value',
@@ -72,7 +74,7 @@ function renderChart() {
     },
     grid: {
       top: 20,
-      bottom: 10,
+      bottom: 6,
       left: 4,
       right: 10
       // outerBounds: true
@@ -137,4 +139,4 @@ onBeforeUnmount(() => {
 
 </script>
 
-<style scoped></style>
+<style scoped lang="css"></style>

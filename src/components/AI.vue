@@ -1,72 +1,76 @@
 <template>
-  <div>
+  <div class="pl-ai-main">
     <div class="mb-2 flex items-center justify-between p-6">
-      <div class="tabs tabs-box tabs-sm w-fit bg-transparent border-none shadow-none">
+      <div class="pl-tabs">
         <!-- AI 服务 -->
-        <label class="tab font-bold">
+        <label>
           <input type="radio" name="pl-ai-type" checked @change="handleTabChange" />
-          <svg class="h-3 w-3 mr-1 stroke-current">
+          <svg>
             <use xlink:href="#iconGraph"></use>
           </svg>
           AI 服务
         </label>
-        <div class="tab-content mt-6">
-          <div class="grid grid-cols-6 gap-4 items-stretch">
-            <!-- 提示词 -->
-            <label class="col-span-1 text-sm font-medium text-gray-700 pl-2 mt-[2px]">
-              上传图片
-            </label>
-            <div class="col-span-5">
-              <label class="btn btn-soft btn-primary btn-xs">
-                <svg class="h-4 w-4 stroke-current">
-                  <use xlink:href="#iconCloud"></use>
-                </svg>
-                上传
-                <input type="file" class="hidden" @change="aiRecord($event)" />
-              </label>
-            </div>
-            <!-- 结果 -->
-            <label class="col-span-1 text-sm font-medium text-gray-700 pl-2">
-              结果
-            </label>
-            <div class="col-span-5">
-              <span v-show="loading"  class="loading loading-bars loading-xs"></span>
-              <pre>{{ aiResult }}</pre>
-            </div>
-          </div>
-        </div>
 
         <!-- 本地 AI -->
-        <label class="tab font-bold">
+        <label>
           <input type="radio" name="pl-ai-type" @change="handleTabChange" />
-          <svg class="h-3 w-3 mr-1 stroke-current">
+          <svg>
             <use xlink:href="#iconInlineCode"></use>
           </svg>
           本地 AI
         </label>
-        <div class="tab-content mt-6">
-          <div class="grid grid-cols-6 gap-4 items-stretch">
+      </div>
+
+      <div class="tab-content">
+        <!-- AI 服务 -->
+        <div>
+          <div class="pl-ai-form">
+            <label class="pl-ai-label" style="margin-top: 3px;">上传图片</label>
+            <div>
+              <label class="pl-file-button">
+                <svg>
+                  <use xlink:href="#iconCloud"></use>
+                </svg>
+                上传
+                <input type="file" style="display: none;" @change="aiRecord($event)" accept=".jpg,.jpeg,.png" />
+              </label>
+            </div>
+
+            <label class="pl-ai-label">结果</label>
+            <div>
+              <span v-show="loading" class="pl-loading">
+              </span>
+              <span style="color: #e23955;">{{ errMsg }}</span>
+              <pre class="result-pre">{{ aiResult }}</pre>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- 本地 AI -->
+        <div>
+          <div class="pl-ai-form">
             <!-- 提示词 -->
-            <label class="col-span-1 text-sm font-medium text-gray-700 pl-2">
+            <label class="pl-ai-label">
               提示词
             </label>
-            <div class="col-span-5">
-              <pre class="overflow-x-auto" :class="!isExpanded ? 'line-clamp-2' : ''">
+            <div>
+              <pre class="pl-ai-prompt-pre" :class="!isExpanded ? 'line-clamp' : ''">
 {{ prompt }}
 							</pre>
               <div class="flex gap-2 ">
                 <!-- 展开 -->
-                <button class="btn btn-xs btn-square" @click="expandPrompt">
-                  <svg class="h-3 w-3 mr-1 stroke-current" v-show="!isExpanded">
+                <button class="pl-ai-button-sm" @click="expandPrompt">
+                  <svg v-show="!isExpanded">
                     <use xlink:href="#iconDown"></use>
                   </svg>
-                  <svg class="h-3 w-3 mr-1 stroke-current" v-show="isExpanded">
+                  <svg v-show="isExpanded">
                     <use xlink:href="#iconUp"></use>
                   </svg>
                 </button>
                 <!-- 复制 -->
-                <button class="btn btn-xs btn-square" @click="copyPrompt">
-                  <svg class="h-3 w-3 mr-1 stroke-current">
+                <button class="pl-ai-button-sm" style="margin-left: 0.5rem;" @click="copyPrompt">
+                  <svg>
                     <use xlink:href="#iconRestore"></use>
                   </svg>
                 </button>
@@ -74,21 +78,21 @@
             </div>
 
             <!-- 结果 -->
-            <label class="col-span-1 text-sm font-medium text-gray-700 pl-2">
+            <label class="pl-ai-label">
               结果
             </label>
-            <div class="col-span-5">
-              <textarea class="textarea textarea-bordered h-24" v-model="aiResult"
-                placeholder="将本地 AI 结果的返回粘贴到这里"></textarea>
+            <div>
+              <textarea class="pl-form-textarea" v-model="aiResult" placeholder="将本地 AI 结果的返回粘贴到这里">
+              </textarea>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="flex justify-end gap-5 px-6 pb-6">
-      <button class="btn btn-outline btn-sm" @click="close">取消</button>
-      <button class="btn btn-info btn-sm" @click="update">保存</button>
+    <div class="pl-ai-footer">
+      <button class="pl-button" @click="close">取消</button>
+      <button style="color: #fff; background-color: #422ad5;" class="pl-button" @click="update">保存</button>
     </div>
   </div>
 </template>
@@ -113,6 +117,7 @@ const prompt = ref(getPrompt(props.settingConfData, props.itemName))
 const aiResult = ref('')
 const isExpanded = ref(false)
 const loading = ref(false)
+const errMsg = ref('')
 
 const close = () => {
   emit('close')
@@ -152,13 +157,96 @@ const aiRecord = (event: Event) => {
       .then(res => {
         aiResult.value = res
         loading.value = false
+        errMsg.value = ''
       })
       .catch(err => {
         console.error(err)
-        loading.value = false 
+        loading.value = false
+        errMsg.value = err.message
       })
   }
 }
 </script>
 
-<style scoped></style>
+<style scoped lang="css">
+.pl-ai-main {
+  margin: 1rem 1.6rem;
+}
+
+.pl-ai-footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: end;
+  gap: 1rem;
+}
+
+.pl-ai-form {
+  display: grid;
+  grid-template-columns: 1fr 5fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.pl-ai-label {
+  font-weight: 700;
+  margin-left: 0.75rem;
+}
+
+.pl-file-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0 0.5rem;
+  line-height: 1.5rem;
+  border: 1px solid #d0d0d0;
+}
+
+.pl-file-button svg {
+  height: 0.75rem;
+  width: 0.75rem;
+  margin-right: 0.5rem;
+}
+
+.pl-file-button:hover {
+  background-color: #d0d0d0;
+}
+
+.pl-ai-prompt-pre {
+  overflow-x: auto;
+  margin-top: 0;
+}
+
+.line-clamp {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+}
+
+.pl-ai-button-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
+  border: 1px solid #dcdcdc;
+  background: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
+}
+
+.pl-ai-button-sm svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.pl-ai-button-sm:hover {
+  background: #e5e7eb;
+}
+</style>

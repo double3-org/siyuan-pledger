@@ -1,66 +1,76 @@
 <template>
-  <div data-theme="emerald" class="double3-main grid grid-cols-3 gap-4 pr-4 pt-6 pb-4">
+  <div class="pl-pc-main">
     <!-- 左侧 -->
-    <div class="col-span-1 lg:px-6">
+    <div class="pl-pc-main-left">
       <Latest :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
         :accountDate="accountDate" :isMobile="false" @initData="initData"></Latest>
     </div>
 
     <!-- 右侧 -->
-    <div class="col-span-2">
+    <div class="pl-pc-main-right">
       <!-- 顶部工具栏 -->
-      <div class="mb-2 items-center justify-between">
-        <div class="tabs tabs-box tabs-sm p-0 bg-transparent">
-          <label class="tab font-bold">
-            <input type="radio" name="pl-s-type" checked value="lastYeat" @change="onTabChange" />
-            最近一年
-          </label>
+      <div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div class="pl-tabs">
+            <label>
+              <input type="radio" name="pl-s-type" checked value="lastYeat" @change="onTabChange" />
+              最近一年
+            </label>
 
-          <label class="tab font-bold">
-            <input type="radio" name="pl-s-type" value="custom" @change="onTabChange" />
-            自定义
-          </label>
-          <!-- 自定义范围选择 -->
-          <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
-            <DatePicker class="inline-block" v-model="startDate" placeholder="起始日期" />
-            <span class="px-2 font-bold">至</span>
-            <DatePicker class="inline-block mr-6" v-model="endDate" placeholder="结束日期" />
-            <button class="btn btn-sm bg-[#03C755] text-white border-[#00b544]" @click="search">查询</button>
+            <label>
+              <input type="radio" name="pl-s-type" value="custom" @change="onTabChange" />
+              自定义
+            </label>
+          </div>
+          <div class="tab-content" style="flex: 1;">
+            <!-- 第一个 div 必须有, 占位 -->
+            <div></div>
+            <div class="pl-pc-search">
+              <DatePicker v-model="startDate" placeholder="起始日期" />
+              <span style="font-weight: bold; padding: 0 0.5rem;">至</span>
+              <DatePicker v-model="endDate" placeholder="结束日期" />
+              <button class="pl-button pl-pc-search-button" @click="search">查询</button>
+            </div>
           </div>
         </div>
+
+        <!-- 自定义范围选择 -->
+        <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-4 items-start">
+      <div class="pl-pc-chart">
         <!-- 走势图 -->
-        <BIMain class="h-60">
+        <BIMain style="height: 14rem;">
           <template #title>
             <span>走势</span>
           </template>
-          <Line class="h-50 w-full" :lineData="lineData"></Line>
+          <Line class="pl-pc-line" :lineData="lineData"></Line>
         </BIMain>
 
-        <div class="grid grid-cols-1 gap-4">
+        <div>
           <!-- 分析图 -->
-          <BIMain class="h-28">
+          <BIMain style="height: 5.5rem;">
             <template #title>
               <span>分析</span>
-              <span class="badge badge-ghost badge-xs">{{ accountDate }}</span>
+              <span class="pl-pc-bi-badge">{{ accountDate }}</span>
             </template>
             <Compare class="w-full" :amountDiff="accountDiff" :rateDiff="rateDiff" :date="secondDate"></Compare>
           </BIMain>
 
           <!-- 计划图 -->
-          <BIMain class="h-28">
+          <BIMain style="height: 6rem; margin-top: 1rem;">
             <template #title>
               <span>计划</span>
-              <span class="badge badge-ghost badge-xs">{{ accountDate }}</span>
+              <span class="pl-pc-bi-badge">{{ accountDate }}</span>
             </template>
             <Plan :blockNm="100" :value="planRate" />
           </BIMain>
         </div>
 
         <!-- 详情表 -->
-        <BIMain class="col-span-2">
-          <Table class="w-full" :times="Array.from(allTimeSet)" :data="tableData" :conf="settingConfData.config" />
+        <BIMain style="grid-column: span 2 / span 2;">
+          <Table style="width: 100%;" :times="Array.from(allTimeSet)" :data="tableData"
+            :conf="settingConfData.config" />
         </BIMain>
       </div>
     </div>
@@ -241,9 +251,73 @@ const onTabChange = (e: any) => {
 }
 </script>
 
-<style lang="css">
-.tabs-box> :is(label:has(:checked)) {
+<style scoped lang="css">
+.pl-pc-main {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background-color: #fff;
+}
+
+.pl-pc-main-left {
+  grid-column: span 2 / span 2;
+}
+
+.pl-pc-main-right {
+  grid-column: span 5 / span 5;
+}
+
+.tab-content>div {
+  display: none;
+}
+
+.pl-tabs:has(label:nth-of-type(1) input:checked)+.tab-content>div:nth-child(1),
+.pl-tabs:has(label:nth-of-type(2) input:checked)+.tab-content>div:nth-child(2) {
+  display: block;
+}
+
+.pl-pc-search {
+  display: flex;
+  padding-left: 1rem;
+  border-left: 1px solid #e5e7eb;
+}
+
+.pl-button.pl-pc-search-button {
+  background-color: #1447e6;
+  border: 0;
   color: #fff;
-  background-color: #000000;
+  margin-left: 1rem;
+}
+
+.pl-button.pl-pc-search-button:hover {
+  background-color: #0f3ac7;
+  border-color: #0f3ac7;
+}
+
+.pl-pc-chart {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.pl-pc-line {
+  height: 12rem;
+  width: 100%;
+}
+
+.pl-pc-bi-badge {
+  background-color: #e8e8e8;
+  color: #000;
+  width: fit-content;
+  justify-content: center;
+  align-items: center;
+  font-size: .5rem;
+  display: inline-flex;
+  vertical-align: middle;
+  padding: 0.15rem 0.35rem;
+  border-radius: .5rem;
+  margin-left: 0.5rem;
 }
 </style>

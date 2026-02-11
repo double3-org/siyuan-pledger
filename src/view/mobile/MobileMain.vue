@@ -1,6 +1,6 @@
 <template>
-  <Latest data-theme="emerald" class="m-2" :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
-    :accountDate="accountDate" :isMobile="true" @initData="initData"></Latest>
+  <Latest class="m-2" :settingConfData="settingConfData" :latestLedgerList="latestLedgerList"
+    :accountTotal="accountTotal" :accountDate="accountDate" :isMobile="true" @initData="initData"></Latest>
 </template>
 
 <script setup lang="ts">
@@ -57,4 +57,4 @@ async function initData() {
 
 </script>
 
-<style lang="css"></style>
+<style scoped lang="css"></style>

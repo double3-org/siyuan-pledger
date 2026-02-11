@@ -1,47 +1,45 @@
 <template>
-  <div class="m-4 double3-main">
-    <div class="m-3">
-      <div class="font-bold inline-flex items-center gap-2">
-        <svg class="h-4 w-4 stroke-current">
+  <div class="pl-ledger-edit-main">
+    <div>
+      <div class="pl-ledger-edit-label">
+        <svg>
           <use xlink:href="#iconCalendar"></use>
         </svg>
         登记时间
-        <span class="badge badge-neutral badge-xs">must</span>
+        <span class="pl-ledger-badge">must</span>
       </div>
       <!-- 日期 -->
-      <DatePicker class="ml-2 pl-4 mx-3 mt-2 mb-4 border-l border-gray-400" v-model="selectedDate" />
+      <DatePicker class="pl-ledger-edit-input" v-model="selectedDate" />
     </div>
 
     <div>
-      <div v-for="(lItem, index) in ledgerForm" :key="index" class="m-3">
-        <div class="font-bold inline-flex items-center gap-2">
-          <svg class="h-4 w-4 stroke-current">
+      <div v-for="(lItem, index) in ledgerForm" :key="index">
+        <div class="pl-ledger-edit-label">
+          <svg>
             <use :xlink:href="`#${lItem.icon}`"></use>
           </svg>
           {{ lItem.name }}
-
-          <button class="btn btn-soft btn-primary btn-xs" @click="aiRecord(lItem)">
-            <svg class="h-4 w-4 stroke-current">
+          <button class="pl-button pl-ai-button" @click="aiRecord(lItem)">
+            <svg>
               <use xlink:href="#iconD3AI"></use>
             </svg>
             AI 记
           </button>
         </div>
-        <div class="ml-2 pl-4 border-l border-gray-400 grid grid-cols-1 md:grid-cols-3 mx-3 mt-2 mb-4">
-          <div class="col-span-1" v-for="(lc, index) in lItem.children" :key="index">
-            <fieldset class="fieldset">
-              <legend class="fieldset-legend">{{ lc.name }}</legend>
-              <input type="number" v-model="lc.amount" class="input input-sm w-[168px]" />
+        <div class="pl-ledger-edit-form">
+          <div class="" v-for="(lc, index) in lItem.children" :key="index">
+            <fieldset>
+              <legend>{{ lc.name }}</legend>
+              <input class="pl-form-input" type="number" v-model="lc.amount" />
             </fieldset>
           </div>
         </div>
-
       </div>
     </div>
 
-    <div class="flex justify-end gap-5 p-6">
-      <button class="btn btn-outline btn-sm" @click="close">取消</button>
-      <button class="btn btn-sm btn bg-[#1A77F2] text-white border-[#005fd8]" @click="update">保存</button>
+    <div class="pl-ledger-edit-footer">
+      <button class="pl-button" @click="close">取消</button>
+      <button style="color: #fff; background-color: #422ad5;" class="pl-button" @click="update">保存</button>
     </div>
   </div>
 </template>
@@ -149,3 +147,94 @@ const aiRecord = (item: LedgerItem) => {
   })
 }
 </script>
+
+<style scoped lang="css">
+.pl-ledger-edit-main {
+  margin: 1rem 1.6rem;
+}
+
+.pl-ledger-edit-label {
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-ledger-edit-label svg {
+  height: 1.2rem;
+  width: 1.2rem;
+}
+
+.pl-ledger-edit-input {
+  margin: 0.5rem 0.75rem 1rem;
+  display: block;
+  padding-left: 1rem;
+  border-left: 1px solid #e5e7eb;
+}
+
+.pl-ledger-badge {
+  background-color: #000;
+  color: #fff;
+  width: fit-content;
+  justify-content: center;
+  align-items: center;
+  font-size: .5rem;
+  display: inline-flex;
+  vertical-align: middle;
+  padding: 0.15rem 0.35rem;
+  border-radius: .5rem;
+  margin-left: 0.5rem;
+}
+
+.pl-ai-button {
+  background-color: #edf0fe;
+  color: #422ad5;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.pl-ai-button svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.pl-ai-button:hover {
+  background-color: #422ad5;
+  color: #fff;
+}
+
+.pl-ledger-edit-form fieldset {
+  border: 0;
+  display: grid;
+}
+
+.pl-ledger-edit-form {
+  margin: 0.5rem 0.75rem 1rem;
+  border-left: 1px solid #e5e7eb;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 768px) {
+  .pl-ledger-edit-form {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+.pl-ledger-edit-form legend {
+  color: #000;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: -.25rem;
+  padding-block: .5rem;
+  font-weight: 600;
+  display: flex;
+}
+
+.pl-ledger-edit-footer {
+  display: flex;
+  justify-content: end;
+  gap: 1rem;
+}
+</style>

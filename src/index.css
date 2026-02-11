@@ -1,0 +1,148 @@
+.pl-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  background-color: #e6e6e7;
+  border: 1px solid #e6e6e7;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: bold;
+  padding: 0.5rem 0.75rem;
+}
+
+.pl-button svg {
+  height: 0.75rem;
+  width: 0.75rem;
+  margin-right: 0.5rem;
+}
+
+.pl-button:hover {
+  background-color: #e2e2e2;
+  border-color: #e2e2e2;
+}
+
+.pl-tabs input[type="radio"] {
+  display: none;
+}
+
+.pl-tabs svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.pl-tabs {
+  display: flex;
+  font-weight: bold;
+}
+
+.pl-tabs label {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  background-color: #e6e6e7;
+  margin-right: 0.25rem;
+  border-radius: 0.5rem;
+}
+
+.pl-tabs > :is(label:has(:checked)) {
+  color: #e6e6e7;
+  background-color: #333;
+}
+
+.pl-card {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  border: 1px solid #e6e6e7;
+  padding: 0.5rem 1rem;
+}
+
+.pl-card-title {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.pl-loading {
+  display: inline-block;
+  width: 1.2em;
+  height: 1em;
+  position: relative;
+  color: #333;
+  margin-left: 1rem;
+}
+
+.pl-loading::before,
+.pl-loading::after {
+  content: "";
+  position: absolute;
+  width: 0.2em;
+  height: 100%;
+  background: currentColor;
+  animation: pl-loading-wave 1s infinite ease-in-out;
+}
+
+.pl-loading {
+  background: currentColor;
+  width: 0.2em;
+  animation: pl-loading-wave 1s infinite ease-in-out;
+}
+
+.pl-loading::before {
+  left: -0.4em;
+  animation-delay: -0.2s;
+}
+
+.pl-loading::after {
+  left: 0.4em;
+  animation-delay: 0.2s;
+}
+
+@keyframes pl-loading-wave {
+  0%,
+  80%,
+  100% {
+    transform: scaleY(0.4);
+  }
+  40% {
+    transform: scaleY(1);
+  }
+}
+
+.pl-form-input {
+  height: 2.15rem;
+  padding: 0 0.75rem;
+  line-height: 1.25rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0.25rem;
+  outline: none;
+  display: grid;
+}
+
+.pl-form-input:hover,
+.pl-form-textarea:hover {
+  border-color: #9ca3af;
+}
+
+.pl-form-input:focus,
+.pl-form-textarea:focus {
+  border-color: #422ad5;
+  box-shadow: 0 0 0 2px #edf0fe;
+}
+
+.pl-form-input::placeholder,
+.pl-form-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.pl-form-textarea {
+  padding: 0 0.75rem;
+  line-height: 1.25rem;
+  color: #000;
+  background-color: #fff;
+  border: 1px solid #9ca3af;
+  border-radius: 0.25rem;
+  width: 65%;
+  height: 6rem;
+  outline: none;
+}
