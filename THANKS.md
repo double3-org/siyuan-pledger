@@ -8,14 +8,6 @@
   渐进式 JavaScript 框架，为项目提供响应式 UI 能力 
   [去看看](https://github.com/vuejs/vue) 
 
-- **Tailwind CSS**  
-   CSS 框架，用于构建一致且高效的界面样式
-   [去看看](https://github.com/tailwindlabs/tailwindcss) 
-
-- **DaisyUI**  
-  基于 Tailwind CSS 的组件库
-   [去看看](https://github.com/saadeghi/daisyui) 
-
 - **ECharts**  
   功能强大的可视化图表库，用于数据展示
    [去看看](https://github.com/apache/echarts) 

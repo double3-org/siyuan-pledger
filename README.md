@@ -18,7 +18,7 @@
 
 ## 特别鸣谢
 
-项目使用 `Vue`、`Tailwind CSS`、`@tailwindcss/vite`、`DaisyUI`、`ECharts`、`cally`、`currency.js` 等框架或第三方库实现具体业务功能
+项目使用 `Vue`、`ECharts`、`cally`、`currency.js` 等框架或第三方库实现具体业务功能
 
 在开发与构建时使用了 `Vite`、`@vitejs/plugin-vue`、`TypeScript`、`vue-tsc`、`ts-node`、`@types/node`、`cross-env`、`autoprefixer`、`fast-glob`、`minimist`、`rollup-plugin-livereload`、`vite-plugin-static-copy`、`vite-plugin-zip-pack` 等构建工具或开发依赖
 
@@ -41,3 +41,5 @@
 - 缺少足够的引导
 
 不过，考虑到该需求比较小众，当前版本已经基本满足我对该插件的想象，如果未来有其他朋友使用，我会考虑在后续版本中进行优化
+
+在可预见的未来，我将增加记账功能，敬请期待
