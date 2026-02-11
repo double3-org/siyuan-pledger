@@ -25,11 +25,13 @@
           <div class="tab-content" style="flex: 1;">
             <!-- 第一个 div 必须有, 占位 -->
             <div></div>
-            <div class="pl-pc-search">
-              <DatePicker v-model="startDate" placeholder="起始日期" />
-              <span style="font-weight: bold; padding: 0 0.5rem;">至</span>
-              <DatePicker v-model="endDate" placeholder="结束日期" />
-              <button class="pl-button pl-pc-search-button" @click="search">查询</button>
+            <div>
+              <div class="pl-pc-search">
+                <DatePicker v-model="startDate" placeholder="起始日期" />
+                <span style="font-weight: bold; padding: 0 0.5rem;">至</span>
+                <DatePicker v-model="endDate" placeholder="结束日期" />
+                <button class="pl-button pl-pc-search-button" @click="search">查询</button>
+              </div>
             </div>
           </div>
         </div>
@@ -237,7 +239,7 @@ async function initData() {
   accountDiff.value = currency(sum).subtract(secondSum).value;
   rateDiff.value = secondSum === 0 ? 0 : currency(accountDiff.value, { precision: 4 }).divide(Math.abs(secondSum)).multiply(100).value;
   // 右侧计划图, 计算计划完成率
-  planRate.value = sum / (Number(props.settingConfData.planNum) ?? 1000000);
+  planRate.value = sum / (Number(props.settingConfData.planNum ?? 1000000));
 }
 
 const onTabChange = (e: any) => {
@@ -266,15 +268,6 @@ const onTabChange = (e: any) => {
 
 .pl-pc-main-right {
   grid-column: span 5 / span 5;
-}
-
-.tab-content>div {
-  display: none;
-}
-
-.pl-tabs:has(label:nth-of-type(1) input:checked)+.tab-content>div:nth-child(1),
-.pl-tabs:has(label:nth-of-type(2) input:checked)+.tab-content>div:nth-child(2) {
-  display: block;
 }
 
 .pl-pc-search {

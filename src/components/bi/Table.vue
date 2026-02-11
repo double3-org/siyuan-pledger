@@ -6,7 +6,7 @@
           <th class="table-left-width table-top-left-cross-1"></th>
           <th class="table-left-width table-top-left-cross-2"></th>
           <th v-for="t in times" :key="t">
-            <span>{{ t }} </span>
+            <span style="padding: 0 0.5rem;">{{ t }} </span>
           </th>
         </tr>
       </thead>
