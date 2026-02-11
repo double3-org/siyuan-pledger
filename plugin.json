@@ -2,7 +2,7 @@
   "name": "siyuan-pledger",
   "author": "li.mian",
   "url": "https://github.com/double3-org/siyuan-pledger",
-  "version": "0.0.2",
+  "version": "0.0.1",
   "minAppVersion": "3.2.1",
   "backends": [
     "all"
