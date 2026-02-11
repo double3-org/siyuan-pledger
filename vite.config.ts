@@ -78,7 +78,7 @@ export default defineConfig({
             ]
           : [
               cleanupDistFiles({
-                patterns: ["i18n/*.md"],
+                patterns: ["i18n"],
                 distDir: outputDir,
               }),
               zipPack({
