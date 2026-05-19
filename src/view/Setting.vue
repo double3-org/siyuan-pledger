@@ -26,11 +26,11 @@
         </p>
         <pre class="overflow-x-auto">
 <code class="text-xs text-gray-500">[{
-  name: '支付宝',
-  icon: 'iconAlipayIcon',
-  children: [
-    { name: '余额宝' },
-    { name: '定期' }
+  "name": "支付宝",
+  "icon": "iconAlipayIcon",
+  "children": [
+    { "name": "余额宝" },
+    { "name": "定期" }
   ]
 }]</code></pre>
       </label>
