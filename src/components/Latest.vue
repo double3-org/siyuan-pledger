@@ -118,7 +118,7 @@ async function saveData(item: LedgerItem[]): Promise<void> {
   const fileList = await getFileTreeById(props.settingConfData.documentId);
   // 获取 year document id
   let yearDocumentId = '';
-  const yearFile = fileList.find((file: any) => file.name === yearDate + '.sy');
+  const yearFile = fileList.find((file: any) => file.name === yearDate + '.sy' || file.name === yearDate);
   if (yearFile) yearDocumentId = yearFile.id;
   if (!yearDocumentId) {
     yearDocumentId = await createDoc(yearDate ?? '', props.settingConfData.documentId);

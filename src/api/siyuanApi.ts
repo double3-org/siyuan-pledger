@@ -180,9 +180,5 @@ export async function getYearDocs(documentId: string): Promise<IFile[]> {
   }
   const fileList = await getFileTreeById(documentId);
   return fileList
-    .filter(
-      (file): file is IFile =>
-        typeof file?.name === "string" && /^\d{4}\.sy$/.test(file.name),
-    )
     .sort((a, b) => extractYear(b) - extractYear(a));
 }
