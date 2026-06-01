@@ -8,8 +8,9 @@
         登记时间
         <span class="pl-ledger-badge">must</span>
       </div>
-      <!-- 日期 -->
-      <DatePicker class="pl-ledger-edit-input" v-model="selectedDate" />
+      <!-- 新增时可选日期，编辑时固定为当前记录日期 -->
+      <DatePicker v-if="!isEditMode" class="pl-ledger-edit-input" v-model="selectedDate" />
+      <div v-else class="pl-ledger-edit-input">{{ selectedDate }}</div>
     </div>
 
     <div>
@@ -57,21 +58,22 @@ const emit = defineEmits<{
   (e: "close"): void
 }>()
 
-const ledgerForm = ref<LedgerItem[]>([])
-
 const props = defineProps<{
   ledgerData?: LedgerItem[], // 账本数据
   confData: SettingConfig, // 配置数据
   isMobile?: boolean // 是否为移动端
 }>();
 
+const ledgerForm = ref<LedgerItem[]>([])
+const isEditMode = !!props.ledgerData?.length
+
 const selectedDate = ref('')
-getCurrentTime().then(res => selectedDate.value = res)
 
 if (props.ledgerData) {
-  ledgerForm.value = props.ledgerData
+  ledgerForm.value = cloneLedgerList(props.ledgerData)
   selectedDate.value = props.ledgerData[0].time || ''
 } else {
+  getCurrentTime().then(res => selectedDate.value = res)
   newLedgerForm()
 }
 
@@ -145,6 +147,10 @@ const aiRecord = (item: LedgerItem) => {
       }
     }
   })
+}
+
+function cloneLedgerList(data: LedgerItem[]): LedgerItem[] {
+  return JSON.parse(JSON.stringify(data))
 }
 </script>
 
