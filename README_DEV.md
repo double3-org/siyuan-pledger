@@ -5,6 +5,8 @@
 
 `npx make-link-win` 创建软连接 **OR** `npx make-install` 复制文件到思源工作区 
 
+如果是 mac 系统，需要使用 `npx make-link` 创建软连接
+
 `npx check-link` 检查状态
 
 请使用 Chrome 浏览器并保持和电脑在同一个网络内，端口 50940 访问项目

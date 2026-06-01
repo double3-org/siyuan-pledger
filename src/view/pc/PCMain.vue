@@ -28,7 +28,7 @@
             <div>
               <div class="pl-pc-search">
                 <DatePicker v-model="startDate" placeholder="起始日期" />
-                <span style="font-weight: bold; padding: 0 0.5rem;">至</span>
+                <span style="font-weight: bold; padding: 0.5rem;">至</span>
                 <DatePicker v-model="endDate" placeholder="结束日期" />
                 <button class="pl-button pl-pc-search-button" @click="search">查询</button>
               </div>
