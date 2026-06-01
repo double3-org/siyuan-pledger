@@ -168,7 +168,7 @@ const search = async () => {
   const timeArr = data
     .map(item => item.time)
     .filter(Boolean) as string[];
-  const sortedTimes = [...new Set(timeArr)].sort((a, b) => b.localeCompare(a));
+  const sortedTimes = Array.from(new Set(timeArr)).sort((a, b) => b.localeCompare(a));
   sortedTimes.forEach(time => allTimeSet.value.add(time));
   // 计算折线图数据
   const map = new Map<string, number>();
@@ -196,7 +196,7 @@ async function initData() {
   const timeArr = accountList
     .map(item => item.time)
     .filter(Boolean) as string[];
-  const sortedTimes = [...new Set(timeArr)].sort((a, b) => b.localeCompare(a));
+  const sortedTimes = Array.from(new Set(timeArr)).sort((a, b) => b.localeCompare(a));
   sortedTimes.forEach(time => allTimeSet.value.add(time));
   let latestDate = sortedTimes[0] || "";
   let secondLatestDate = sortedTimes.length > 1 ? sortedTimes[1] || "" : sortedTimes[0];
