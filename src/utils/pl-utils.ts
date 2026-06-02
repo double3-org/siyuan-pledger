@@ -248,4 +248,13 @@ function tableMD2json(
   return result;
 }
 
-export { getObjectDepth, config2TableMDHeader, json2TableMDBody, tableMD2json };
+/**
+ * 深拷贝对象（使用 JSON 序列化方式）
+ * @param obj 要拷贝的对象
+ * @returns 拷贝后的对象
+ */
+function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+export { getObjectDepth, config2TableMDHeader, json2TableMDBody, tableMD2json, deepClone };

@@ -28,7 +28,7 @@
             <div>
               <div class="pl-pc-search">
                 <DatePicker v-model="startDate" placeholder="起始日期" />
-                <span style="font-weight: bold; padding: 0 0.5rem;">至</span>
+                <span style="font-weight: bold; padding: 0.5rem;">至</span>
                 <DatePicker v-model="endDate" placeholder="结束日期" />
                 <button class="pl-button pl-pc-search-button" @click="search">查询</button>
               </div>
@@ -168,7 +168,7 @@ const search = async () => {
   const timeArr = data
     .map(item => item.time)
     .filter(Boolean) as string[];
-  const sortedTimes = [...new Set(timeArr)].sort((a, b) => b.localeCompare(a));
+  const sortedTimes = Array.from(new Set(timeArr)).sort((a, b) => b.localeCompare(a));
   sortedTimes.forEach(time => allTimeSet.value.add(time));
   // 计算折线图数据
   const map = new Map<string, number>();
@@ -196,7 +196,7 @@ async function initData() {
   const timeArr = accountList
     .map(item => item.time)
     .filter(Boolean) as string[];
-  const sortedTimes = [...new Set(timeArr)].sort((a, b) => b.localeCompare(a));
+  const sortedTimes = Array.from(new Set(timeArr)).sort((a, b) => b.localeCompare(a));
   sortedTimes.forEach(time => allTimeSet.value.add(time));
   let latestDate = sortedTimes[0] || "";
   let secondLatestDate = sortedTimes.length > 1 ? sortedTimes[1] || "" : sortedTimes[0];

@@ -98,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { getPrompt } from '@/utils/ai.ts'
+import { getPrompt } from '@/utils/ai'
 import { ref } from 'vue'
 import { showMessage } from 'siyuan'
 import { chatWithQwen } from "@/api/aiApi"

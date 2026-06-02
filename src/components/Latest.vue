@@ -59,7 +59,7 @@
               {{acc.children?.map(c => `${c.name}:${c.amount ?? 0}`).join(', ')}}
             </div>
           </div>
-          <button>
+          <button @click="editLedgerItem(acc)">
             <svg>
               <use xlink:href="#iconD3EidtIcon"></use>
             </svg>
@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { showMessage } from 'siyuan'
-import { config2TableMDHeader, json2TableMDBody } from '../utils/pl-utils.js';
+import { config2TableMDHeader, json2TableMDBody, deepClone } from '../utils/pl-utils.js';
 import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi.js';
 const emit = defineEmits<{
   (e: "initData"): void
@@ -91,14 +91,26 @@ const props = defineProps<{
 
 // 新增资产记录
 const addLedgerItem = () => {
+  openLedgerEditDialog("新增资产记录");
+}
+
+// 编辑资产记录
+const editLedgerItem = (acc: LedgerItem) => {
+  openLedgerEditDialog("修改资产记录", acc);
+}
+
+// 打开编辑弹窗
+const openLedgerEditDialog = (title: string, ledgerData?: LedgerItem) => {
+  const originalLedgerData = ledgerData ? deepClone(ledgerData) : undefined;
   const ledgerEditDialog = alert(LedgerEdit, {
-    title: "新增资产记录",
+    title,
     isMobile: props.isMobile,
     props: {
       confData: props.settingConfData,
       isMobile: props.isMobile,
+      ledgerData: ledgerData ? [deepClone(ledgerData)] : undefined,
       onUpdate: (item: LedgerItem[]) => {
-        saveData(item).then(() => {
+        editData(item, originalLedgerData).then(() => {
           showMessage("保存成功", 3000, "info");
           ledgerEditDialog?.destroy()
           setTimeout(() => {
@@ -110,10 +122,36 @@ const addLedgerItem = () => {
   });
 }
 
-// 保存
-async function saveData(item: LedgerItem[]): Promise<void> {
-  // 获取 date
+/**
+ * 编辑资产记录
+ * 如果 originLedgerData 不存在，说明是新增资产记录
+ * 如果 originLedgerData 存在，说明是修改资产记录
+ */
+async function editData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<void> {
   const yearDate = item[0].time?.split('-')[0];
+  if (!yearDate) return;
+
+  // 没有原始数据，说明是新增资产记录，直接保存
+  if (!originLedgerData) {
+    await saveData(yearDate, item);
+    return;
+  }
+
+  const editLedgerData = deepClone(item[0]);
+  const originYear = originLedgerData.time?.split('-')[0];
+  if (!originYear) return;
+
+  // 如果年份相同，说明是修改资产记录，直接替换
+  // 如果年份不同，未知异常，不处理
+  if (originYear === yearDate) {
+    await replaceLedgerData(yearDate, originLedgerData, editLedgerData);
+    return;
+  }
+}
+
+// 保存
+async function saveData(yearDate: string, item: LedgerItem[]): Promise<void> {
+  const itemCopy = deepClone(item);
   // 获取 documentId 下文件列表
   const fileList = await getFileTreeById(props.settingConfData.documentId);
   // 获取 year document id
@@ -129,7 +167,7 @@ async function saveData(item: LedgerItem[]): Promise<void> {
     tableBlockMarkdown = config2TableMDHeader(props.settingConfData.config)
   }
   // 追加新的数据行
-  tableBlockMarkdown += "\n" + json2TableMDBody(item)
+  tableBlockMarkdown += "\n" + json2TableMDBody(itemCopy)
   if (tableBlockId) {
     // 更新已有 table block
     tableBlockId = await updateBlockContent(tableBlockId, tableBlockMarkdown);
@@ -140,6 +178,56 @@ async function saveData(item: LedgerItem[]): Promise<void> {
   // 锁定文件
   blockDocument(yearDocumentId)
 }
+
+// 修改
+async function replaceLedgerData(year: string, originLedgerData: LedgerItem, ledgerData: LedgerItem): Promise<void> {
+  // 获取年份文档状态
+  const fileList = await getFileTreeById(props.settingConfData.documentId);
+  let yearDocumentId = '';
+  const yearFile = fileList.find((file: any) => file.name === year + '.sy' || file.name === year);
+  if (yearFile) yearDocumentId = yearFile.id;
+  if (!yearDocumentId) {
+    yearDocumentId = await createDoc(year, props.settingConfData.documentId);
+  }
+  const { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
+
+  // 替换表格行数据
+  const tableLines = tableBlockMarkdown
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line) => line.startsWith('|') && line.endsWith('|'));
+
+  let nextTableMarkdown: string;
+  if (tableLines.length < 2) {
+    nextTableMarkdown = `${config2TableMDHeader(props.settingConfData.config)}\n${json2TableMDBody([ledgerData])}`;
+  } else {
+    const headerLines = tableLines.slice(0, 2);
+    const bodyLines = tableLines.slice(2);
+    
+    // 分割表格行
+    const splitTableRow = (line: string): string[] => {
+      return line.slice(1, -1).split('|').map((cell) => cell.trim());
+    };
+    
+    // 判断是否为目标行
+    const isTargetRow = (line: string) => {
+      const cols = splitTableRow(line);
+      return cols[0] === (originLedgerData.time || '') && cols[1] === originLedgerData.name;
+    };
+
+    const matchedIndex = bodyLines.findIndex(isTargetRow);
+    const beforeLines = matchedIndex >= 0 ? bodyLines.slice(0, matchedIndex) : bodyLines;
+    const afterLines = matchedIndex >= 0 ? bodyLines.slice(matchedIndex).filter((line) => !isTargetRow(line)) : [];
+    const nextRows = json2TableMDBody([ledgerData]).split('\n').filter(Boolean);
+
+    nextTableMarkdown = [...headerLines, ...beforeLines, ...nextRows, ...afterLines].join('\n');
+  }
+
+  await updateBlockContent(tableBlockId, nextTableMarkdown);
+  await blockDocument(yearDocumentId);
+}
+
+
 </script>
 
 <style scoped lang="css">
