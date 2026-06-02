@@ -72,7 +72,7 @@
 
 <script setup lang="ts">
 import { showMessage } from 'siyuan'
-import { config2TableMDHeader, json2TableMDBody } from '../utils/pl-utils.js';
+import { config2TableMDHeader, json2TableMDBody, deepClone } from '../utils/pl-utils.js';
 import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi.js';
 const emit = defineEmits<{
   (e: "initData"): void
@@ -99,17 +99,18 @@ const editLedgerItem = (acc: LedgerItem) => {
   openLedgerEditDialog("修改资产记录", acc);
 }
 
+// 打开编辑弹窗
 const openLedgerEditDialog = (title: string, ledgerData?: LedgerItem) => {
-  const originalLedgerData = ledgerData ? cloneLedgerItem(ledgerData) : undefined;
+  const originalLedgerData = ledgerData ? deepClone(ledgerData) : undefined;
   const ledgerEditDialog = alert(LedgerEdit, {
     title,
     isMobile: props.isMobile,
     props: {
       confData: props.settingConfData,
       isMobile: props.isMobile,
-      ledgerData: ledgerData ? [cloneLedgerItem(ledgerData)] : undefined,
+      ledgerData: ledgerData ? [deepClone(ledgerData)] : undefined,
       onUpdate: (item: LedgerItem[]) => {
-        saveData(item, originalLedgerData).then(() => {
+        editData(item, originalLedgerData).then(() => {
           showMessage("保存成功", 3000, "info");
           ledgerEditDialog?.destroy()
           setTimeout(() => {
@@ -121,70 +122,66 @@ const openLedgerEditDialog = (title: string, ledgerData?: LedgerItem) => {
   });
 }
 
-// 保存
-async function saveData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<void> {
-  const nextLedgerData = cloneLedgerItem(item[0]);
-  const nextYear = nextLedgerData.time?.split('-')[0];
-  if (!nextYear) return;
+/**
+ * 编辑资产记录
+ * 如果 originLedgerData 不存在，说明是新增资产记录
+ * 如果 originLedgerData 存在，说明是修改资产记录
+ */
+async function editData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<void> {
+  const yearDate = item[0].time?.split('-')[0];
+  if (!yearDate) return;
 
+  // 没有原始数据，说明是新增资产记录，直接保存
   if (!originLedgerData) {
-    await appendLedgerData(nextYear, nextLedgerData);
+    await saveData(yearDate, item);
     return;
   }
 
+  const editLedgerData = deepClone(item[0]);
   const originYear = originLedgerData.time?.split('-')[0];
   if (!originYear) return;
 
-  if (originYear === nextYear) {
-    await replaceLedgerData(nextYear, originLedgerData, nextLedgerData);
+  // 如果年份相同，说明是修改资产记录，直接替换
+  // 如果年份不同，未知异常，不处理
+  if (originYear === yearDate) {
+    await replaceLedgerData(yearDate, originLedgerData, editLedgerData);
     return;
   }
-
-  await removeLedgerData(originYear, originLedgerData);
-  await appendLedgerData(nextYear, nextLedgerData);
 }
 
-async function appendLedgerData(year: string, ledgerData: LedgerItem): Promise<void> {
-  const { yearDocumentId, tableBlockId, tableBlockMarkdown } = await getYearTableState(year);
-  const rowMarkdown = json2TableMDBody([ledgerData]);
-  const baseMarkdown = tableBlockId && tableBlockMarkdown
-    ? tableBlockMarkdown.trimEnd()
-    : config2TableMDHeader(props.settingConfData.config);
-  const nextTableMarkdown = `${baseMarkdown}\n${rowMarkdown}`;
+// 保存
+async function saveData(yearDate: string, item: LedgerItem[]): Promise<void> {
+  const itemCopy = deepClone(item);
+  // 获取 documentId 下文件列表
+  const fileList = await getFileTreeById(props.settingConfData.documentId);
+  // 获取 year document id
+  let yearDocumentId = '';
+  const yearFile = fileList.find((file: any) => file.name === yearDate + '.sy' || file.name === yearDate);
+  if (yearFile) yearDocumentId = yearFile.id;
+  if (!yearDocumentId) {
+    yearDocumentId = await createDoc(yearDate ?? '', props.settingConfData.documentId);
+  }
+  // 获取 year document 下第一个 table block
+  let { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
+  if (!tableBlockId) {
+    tableBlockMarkdown = config2TableMDHeader(props.settingConfData.config)
+  }
+  // 追加新的数据行
+  tableBlockMarkdown += "\n" + json2TableMDBody(itemCopy)
   if (tableBlockId) {
-    await updateBlockContent(tableBlockId, nextTableMarkdown);
+    // 更新已有 table block
+    tableBlockId = await updateBlockContent(tableBlockId, tableBlockMarkdown);
   } else {
-    await insertTableBlock(yearDocumentId, nextTableMarkdown);
+    // 插入新的 table block
+    tableBlockId = await insertTableBlock(yearDocumentId, tableBlockMarkdown);
   }
-  await blockDocument(yearDocumentId)
+  // 锁定文件
+  blockDocument(yearDocumentId)
 }
 
-async function replaceLedgerData(
-  year: string,
-  originLedgerData: LedgerItem,
-  ledgerData: LedgerItem
-): Promise<void> {
-  const { yearDocumentId, tableBlockId, tableBlockMarkdown } = await getYearTableState(year);
-  if (!tableBlockId) {
-    await appendLedgerData(year, ledgerData);
-    return;
-  }
-  const nextTableMarkdown = replaceLedgerRows(tableBlockMarkdown, originLedgerData, ledgerData);
-  await updateBlockContent(tableBlockId, nextTableMarkdown);
-  await blockDocument(yearDocumentId)
-}
-
-async function removeLedgerData(year: string, originLedgerData: LedgerItem): Promise<void> {
-  const { yearDocumentId, tableBlockId, tableBlockMarkdown } = await getYearTableState(year);
-  if (!tableBlockId) {
-    return;
-  }
-  const nextTableMarkdown = replaceLedgerRows(tableBlockMarkdown, originLedgerData);
-  await updateBlockContent(tableBlockId, nextTableMarkdown);
-  await blockDocument(yearDocumentId)
-}
-
-async function getYearTableState(year: string): Promise<{ yearDocumentId: string; tableBlockId: string; tableBlockMarkdown: string }> {
+// 修改
+async function replaceLedgerData(year: string, originLedgerData: LedgerItem, ledgerData: LedgerItem): Promise<void> {
+  // 获取年份文档状态
   const fileList = await getFileTreeById(props.settingConfData.documentId);
   let yearDocumentId = '';
   const yearFile = fileList.find((file: any) => file.name === year + '.sy' || file.name === year);
@@ -193,46 +190,44 @@ async function getYearTableState(year: string): Promise<{ yearDocumentId: string
     yearDocumentId = await createDoc(year, props.settingConfData.documentId);
   }
   const { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
-  return { yearDocumentId, tableBlockId, tableBlockMarkdown };
-}
 
-function cloneLedgerItem(item: LedgerItem): LedgerItem {
-  return JSON.parse(JSON.stringify(item));
-}
-
-function replaceLedgerRows(tableMarkdown: string, originLedgerData: LedgerItem, nextLedgerData?: LedgerItem): string {
-  const tableLines = tableMarkdown
+  // 替换表格行数据
+  const tableLines = tableBlockMarkdown
     .split('\n')
     .map((line) => line.trimEnd())
     .filter((line) => line.startsWith('|') && line.endsWith('|'));
 
+  let nextTableMarkdown: string;
   if (tableLines.length < 2) {
-    return nextLedgerData
-      ? `${config2TableMDHeader(props.settingConfData.config)}\n${json2TableMDBody([nextLedgerData])}`
-      : config2TableMDHeader(props.settingConfData.config);
+    nextTableMarkdown = `${config2TableMDHeader(props.settingConfData.config)}\n${json2TableMDBody([ledgerData])}`;
+  } else {
+    const headerLines = tableLines.slice(0, 2);
+    const bodyLines = tableLines.slice(2);
+    
+    // 分割表格行
+    const splitTableRow = (line: string): string[] => {
+      return line.slice(1, -1).split('|').map((cell) => cell.trim());
+    };
+    
+    // 判断是否为目标行
+    const isTargetRow = (line: string) => {
+      const cols = splitTableRow(line);
+      return cols[0] === (originLedgerData.time || '') && cols[1] === originLedgerData.name;
+    };
+
+    const matchedIndex = bodyLines.findIndex(isTargetRow);
+    const beforeLines = matchedIndex >= 0 ? bodyLines.slice(0, matchedIndex) : bodyLines;
+    const afterLines = matchedIndex >= 0 ? bodyLines.slice(matchedIndex).filter((line) => !isTargetRow(line)) : [];
+    const nextRows = json2TableMDBody([ledgerData]).split('\n').filter(Boolean);
+
+    nextTableMarkdown = [...headerLines, ...beforeLines, ...nextRows, ...afterLines].join('\n');
   }
 
-  const headerLines = tableLines.slice(0, 2);
-  const bodyLines = tableLines.slice(2);
-  const isTargetRow = (line: string) => {
-    const cols = splitTableRow(line);
-    return cols[0] === (originLedgerData.time || '') && cols[1] === originLedgerData.name;
-  };
-
-  const matchedIndex = bodyLines.findIndex(isTargetRow);
-  const beforeLines = matchedIndex >= 0 ? bodyLines.slice(0, matchedIndex) : bodyLines;
-  const afterLines = matchedIndex >= 0 ? bodyLines.slice(matchedIndex).filter((line) => !isTargetRow(line)) : [];
-  const nextRows = nextLedgerData ? json2TableMDBody([nextLedgerData]).split('\n').filter(Boolean) : [];
-
-  return [...headerLines, ...beforeLines, ...nextRows, ...afterLines].join('\n');
+  await updateBlockContent(tableBlockId, nextTableMarkdown);
+  await blockDocument(yearDocumentId);
 }
 
-function splitTableRow(line: string): string[] {
-  return line
-    .slice(1, -1)
-    .split('|')
-    .map((cell) => cell.trim());
-}
+
 </script>
 
 <style scoped lang="css">
