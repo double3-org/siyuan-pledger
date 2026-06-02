@@ -25,6 +25,9 @@ const settingConfData = ref<SettingConfig>({
   planNum: "",
   apiKey: "",
   modelName: "",
+  bookkeepingDocumentId: "",
+  bookkeepingStorageMode: "",
+  bookkeepingConfig: "",
 });
 
 const icons = [
@@ -100,7 +103,7 @@ export default class PersonalLedgerPlug extends Plugin {
     let dialog = new Dialog({
       title: "pLedger 插件设置",
       content: `<div id="SettingPanel" style="height: 100%;"></div>`,
-      width: "800px",
+      width: "960px",
       destroyCallback: () => {
         settingView.unmount();
       },

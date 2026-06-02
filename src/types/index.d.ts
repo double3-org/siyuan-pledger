@@ -7,6 +7,9 @@ declare global {
     planNum: string; // 目标金额
     apiKey: string; // 通义千问 API Key
     modelName: string; // 通义千问模型名称
+    bookkeepingDocumentId: string; // 记账数据存放位置
+    bookkeepingStorageMode: string; // 记账数据存放方式
+    bookkeepingConfig: string; // 记账配置内容
   }
 
   interface LedgerItem {

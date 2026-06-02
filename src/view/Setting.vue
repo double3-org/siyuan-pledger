@@ -1,31 +1,38 @@
 <template>
   <div class="pl-setting-main">
-    <div class="pl-setting-form">
-      <label class="col-span-2 text-sm font-medium text-gray-700">
-        数据存放位置
-        <p class="text-xs text-gray-500">请复制文档id到此处, 请不要频繁调整该配置</p>
-      </label>
+    <div class="pl-setting-body">
+      <nav class="pl-setting-sidebar">
+        <button :class="{ active: activeSettingSection === 'asset' }" @click="activeSettingSection = 'asset'">
+          资产配置
+        </button>
+        <button :class="{ active: activeSettingSection === 'bookkeeping' }" @click="activeSettingSection = 'bookkeeping'">
+          记账配置
+        </button>
+      </nav>
 
-      <div class="col-span-4">
-        <input type="text" v-model="localSetting.documentId" placeholder="文档id" class="pl-form-input" />
-      </div>
+      <div v-if="activeSettingSection === 'asset'" class="pl-setting-panel">
+        <div class="pl-setting-row">
+          <label>
+            数据存放位置
+            <p>请复制文档id到此处, 请不要频繁调整该配置</p>
+          </label>
+          <input type="text" v-model="localSetting.documentId" placeholder="文档id" class="pl-form-input" />
+        </div>
 
-      <label class="col-span-2 text-sm font-medium text-gray-700">
-        目标金额
-        <p class="text-xs text-gray-500">请填写目标金额, 默认100W</p>
-      </label>
+        <div class="pl-setting-row">
+          <label>
+            目标金额
+            <p>请填写目标金额, 默认100W</p>
+          </label>
+          <input type="text" v-model="localSetting.planNum" placeholder="目标金额" class="pl-form-input" />
+        </div>
 
-      <div class="col-span-4">
-        <input type="text" v-model="localSetting.planNum" placeholder="目标金额" class="pl-form-input" />
-      </div>
-
-      <label class="col-span-2 text-sm font-medium text-gray-700">
-        配置
-        <p class="text-xs text-gray-500">
-          请按照如下格式填入配置
-        </p>
-        <pre class="overflow-x-auto">
-<code class="text-xs text-gray-500">[{
+        <div class="pl-setting-row pl-setting-row-top">
+          <label>
+            配置
+            <p>请按照如下格式填入配置</p>
+            <pre class="overflow-x-auto">
+<code>[{
   "name": "支付宝",
   "icon": "iconAlipayIcon",
   "children": [
@@ -33,25 +40,58 @@
     { "name": "定期" }
   ]
 }]</code></pre>
-      </label>
+          </label>
+          <textarea v-model="localSetting.config" type="text" placeholder="请填入配置" class="pl-form-textarea" />
+        </div>
 
-      <div class="col-span-4">
-        <textarea v-model="localSetting.config" type="text" placeholder="请填入配置" class="pl-form-textarea" />
+        <div class="pl-setting-row">
+          <label>
+            AI 配置
+            <p>本插件调用阿里云通义千问, 请填写需要调用的模型名称和 API Key</p>
+          </label>
+          <div class="pl-setting-control-group">
+            <input type="text" v-model="localSetting.modelName" placeholder="模型名称" class="pl-form-input" />
+            <input type="text" v-model="localSetting.apiKey" placeholder="API Key" class="pl-form-input" />
+          </div>
+        </div>
       </div>
 
-      <label class="col-span-2 text-sm font-medium text-gray-700">
-        AI 配置
-        <p class="text-xs text-gray-500">
-          本插件调用阿里云通义千问, 请填写需要调用的模型名称和 API Key
-        </p>
-      </label>
-
-      <div class="col-span-4">
-        <div class="mb-2">
-          <input type="text" v-model="localSetting.modelName" placeholder="模型名称" class="pl-form-input"
-            style="margin-bottom: 0.5rem;" />
+      <div v-if="activeSettingSection === 'bookkeeping'" class="pl-setting-panel">
+        <div class="pl-setting-row">
+          <label>
+            数据存放位置
+            <p>请复制文档id到此处, 请不要频繁调整该配置</p>
+          </label>
+          <input type="text" v-model="localSetting.bookkeepingDocumentId" placeholder="记账数据存放位置" class="pl-form-input" />
         </div>
-        <input type="text" v-model="localSetting.apiKey" placeholder="API Key" class="pl-form-input" />
+
+        <div class="pl-setting-row">
+          <label>
+            存放方式
+            <p>请选择记账数据的存放方式，选项后续可能会随功能调整。</p>
+          </label>
+          <select v-model="localSetting.bookkeepingStorageMode" class="pl-form-input">
+            <option value="central">集中存放</option>
+            <option value="date">按日期存放</option>
+          </select>
+        </div>
+
+        <div class="pl-setting-row pl-setting-row-top">
+          <label>
+            配置
+            <pre class="overflow-x-auto"><code>[{
+  "name": "餐饮",
+  "children": [
+    { "name": "早餐" },
+    { "name": "午餐" },
+    { "name": "晚餐" },
+    { "name": "零食" },
+    { "name": "其他" }
+  ]
+}]</code></pre>
+          </label>
+          <textarea v-model="localSetting.bookkeepingConfig" type="text" placeholder="请填入记账配置" class="pl-form-textarea" />
+        </div>
       </div>
     </div>
 
@@ -75,8 +115,12 @@ const props = defineProps<{
 
 // 初始化本地设置数据
 const localSetting = ref<SettingConfig>({
+  bookkeepingDocumentId: "",
+  bookkeepingStorageMode: "",
+  bookkeepingConfig: "",
   ...props.settingConfData
 });
+const activeSettingSection = ref<"asset" | "bookkeeping">("asset");
 
 // 保存设置数据
 const saveSettingData = () => {
@@ -89,36 +133,120 @@ const saveSettingData = () => {
   padding: 1rem 1.5rem;
 }
 
-.pl-setting-form {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  gap: 1rem;
+.pl-setting-body {
+  display: flex;
+  gap: 0.75rem;
+  min-height: 28rem;
 }
 
-.pl-setting-form label {
+.pl-setting-sidebar {
+  width: 10rem;
+  flex-shrink: 0;
+  background-color: #f3f3f3;
+  border-radius: 0.5rem;
+}
+
+.pl-setting-sidebar button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 0;
+  border-radius: 0.4rem;
+  text-align: left;
+  color: #555;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 1rem;
   font-weight: bold;
 }
 
-.pl-setting-form p,
-.pl-setting-form pre {
+.pl-setting-sidebar button.active {
+  color: #333;
+  background-color: #e6e6e7;
+}
+
+.pl-setting-panel {
+  flex: 1;
+  padding: 0 1.25rem;
+  background-color: #fff;
+  border-radius: 0.5rem;
+}
+
+.pl-setting-row {
+  display: grid;
+  grid-template-columns: 2fr 4fr;
+  gap: 1.5rem;
+  align-items: center;
+  border-bottom: 1px solid #e6e6e7;
+  padding: 1rem 0;
+}
+
+.pl-setting-row:last-child {
+  border-bottom: 0;
+}
+
+.pl-setting-row-top {
+  align-items: start;
+}
+
+.pl-setting-row label {
+  color: #2aa7df;
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.pl-setting-row p,
+.pl-setting-row pre,
+.pl-setting-intro p {
   font-weight: lighter;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.25rem 0 0;
+}
+
+.pl-setting-row pre {
   color: #9ca3af;
   font-size: 0.75rem;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
 }
 
-.pl-setting-form input,
-.pl-setting-form textarea {
-  width: 66%;
+.pl-setting-row code {
+  color: #9ca3af;
 }
 
-.pl-setting-form textarea {
-  height: 88%;
+.pl-setting-row input,
+.pl-setting-row select,
+.pl-setting-row textarea {
+  width: 26rem;
+  background-color: #f3f3f3;
+  border-color: transparent;
+}
+
+.pl-setting-row textarea {
+  height: 12rem;
+  resize: none;
+}
+
+.pl-setting-control-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pl-setting-intro {
+  border-bottom: 1px solid #e6e6e7;
+  padding: 1rem 0;
+}
+
+.pl-setting-intro h3 {
+  margin: 0;
+  color: #2aa7df;
+  font-size: 1rem;
 }
 
 .pl-setting-footer {
   display: flex;
   justify-content: end;
   gap: 1rem;
+  padding-top: 1rem;
 }
 </style>
