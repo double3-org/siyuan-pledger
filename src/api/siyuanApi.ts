@@ -75,6 +75,50 @@ export async function createDoc(
 }
 
 /**
+ * 按人类可读路径创建文档 /api/filetree/createDocWithMd
+ */
+export async function createDocWithMdByHPath(
+  notebook: string,
+  path: string,
+  markdown = "",
+): Promise<string> {
+  console.log("准备按路径创建文档", { notebook, path, markdown });
+  var resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+    notebook,
+    path,
+    markdown,
+  });
+  console.log("按路径创建文档结果", resp);
+  return resp.data;
+}
+
+/**
+ * 根据人类可读路径获取文档 ID /api/filetree/getIDsByHPath
+ */
+export async function getIDsByHPath(
+  notebook: string,
+  path: string,
+): Promise<string[]> {
+  console.log("准备根据人类可读路径获取 IDs", { notebook, path });
+  var resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
+    notebook,
+    path,
+  });
+  console.log("根据人类可读路径获取 IDs 结果", resp);
+  return resp.code === 0 && Array.isArray(resp.data) ? resp.data : [];
+}
+
+/**
+ * 获取笔记本配置 /api/notebook/getNotebookConf
+ */
+export async function getNotebookConf(notebook: string): Promise<any> {
+  console.log("准备获取笔记本配置", notebook);
+  var resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
+  console.log("获取笔记本配置结果", resp);
+  return resp.code === 0 ? resp.data : undefined;
+}
+
+/**
  * 根据文档id, 获取第一个表格块信息, 包含 id 和 markdown
  * SELECT id,markdown FROM blocks WHERE root_id = '20251225201147-xfwjyyj' AND type = 't' limit 1
  */
@@ -104,6 +148,26 @@ export async function insertTableBlock(
     previousID: "",
     parentID: docId,
   });
+  return resp.data[0].doOperations[0].id;
+}
+
+/**
+ * 根据文档id在文档中插入 markdown 块 /api/block/insertBlock
+ * @return 块id
+ */
+export async function insertMarkdownBlock(
+  docId: string,
+  mkStr: string,
+): Promise<string> {
+  console.log("准备插入 markdown 块", { docId, mkStr });
+  var resp = await fetchSyncPost("/api/block/insertBlock", {
+    dataType: "markdown",
+    data: mkStr,
+    nextID: "",
+    previousID: "",
+    parentID: docId,
+  });
+  console.log("插入 markdown 块结果", resp);
   return resp.data[0].doOperations[0].id;
 }
 
@@ -142,6 +206,61 @@ export async function blockDocument(id: string): Promise<boolean> {
     attrs: { "custom-sy-readonly": "true" },
   });
   return resp.code === 0;
+}
+
+/**
+ * 设置块属性 /api/attr/setBlockAttrs
+ */
+export async function setBlockAttrs(
+  id: string,
+  attrs: Record<string, string>,
+): Promise<boolean> {
+  console.log("准备设置块属性", { id, attrs });
+  var resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+    id,
+    attrs,
+  });
+  console.log("设置块属性结果", resp);
+  return resp.code === 0;
+}
+
+/**
+ * 通过块自定义属性读取记账记录 /api/query/sql
+ */
+export async function getBookkeepingRecordsByPledge(storageMode?: string): Promise<(BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string })[]> {
+  const sql = storageMode
+    ? `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`
+    : "SELECT block_id,value FROM attributes WHERE name = 'custom-pledge'";
+  console.log("准备查询记账记录", sql);
+  const resp = await executeSql(sql);
+  console.log("查询记账记录结果", resp);
+
+  if (resp.code !== 0 || !Array.isArray(resp.data)) {
+    return [];
+  }
+
+  const records: (BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string })[] = [];
+  for (const item of resp.data) {
+    try {
+      const data = JSON.parse(item.value);
+      if (!data?.date || !data?.parentName || !data?.childName) continue;
+      records.push({
+        type: data.type,
+        date: data.date,
+        parentName: data.parentName,
+        childName: data.childName,
+        amount: Number(data.amount) || 0,
+        remark: data.remark || "",
+        blockId: data.blockId || item.block_id,
+        ...(data.displayTime ? { displayTime: data.displayTime } : {}),
+        ...(data.createdAt ? { createdAt: data.createdAt } : {}),
+      });
+    } catch (error) {
+      console.error("解析记账记录属性失败", { item, error });
+    }
+  }
+
+  return records.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 /**

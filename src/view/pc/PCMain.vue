@@ -1,81 +1,118 @@
 <template>
   <div class="pl-pc-main">
-    <!-- 左侧 -->
-    <div class="pl-pc-main-left">
-      <Latest :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
-        :accountDate="accountDate" :isMobile="false" @initData="initData"></Latest>
-    </div>
+    <template v-if="activePage === 'asset'">
+      <!-- 左侧 -->
+      <div class="pl-pc-main-left">
+        <Latest :settingConfData="settingConfData" :latestLedgerList="latestLedgerList" :accountTotal="accountTotal"
+          :accountDate="accountDate" :isMobile="false" :activePage="activePage" :canChangePage="true"
+          @initData="initData" @changePage="changePage"></Latest>
+      </div>
 
-    <!-- 右侧 -->
-    <div class="pl-pc-main-right">
-      <!-- 顶部工具栏 -->
-      <div>
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <div class="pl-tabs">
-            <label>
-              <input type="radio" name="pl-s-type" checked value="lastYeat" @change="onTabChange" />
-              最近一年
-            </label>
+      <!-- 右侧 -->
+      <div class="pl-pc-main-right">
+        <!-- 顶部工具栏 -->
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div class="pl-tabs">
+              <label>
+                <input type="radio" name="pl-s-type" checked value="lastYeat" @change="onTabChange" />
+                最近一年
+              </label>
 
-            <label>
-              <input type="radio" name="pl-s-type" value="custom" @change="onTabChange" />
-              自定义
-            </label>
-          </div>
-          <div class="tab-content" style="flex: 1;">
-            <!-- 第一个 div 必须有, 占位 -->
-            <div></div>
-            <div>
-              <div class="pl-pc-search">
-                <DatePicker v-model="startDate" placeholder="起始日期" />
-                <span style="font-weight: bold; padding: 0.5rem;">至</span>
-                <DatePicker v-model="endDate" placeholder="结束日期" />
-                <button class="pl-button pl-pc-search-button" @click="search">查询</button>
+              <label>
+                <input type="radio" name="pl-s-type" value="custom" @change="onTabChange" />
+                自定义
+              </label>
+            </div>
+            <div class="tab-content" style="flex: 1;">
+              <!-- 第一个 div 必须有, 占位 -->
+              <div></div>
+              <div>
+                <div class="pl-pc-search">
+                  <DatePicker v-model="startDate" placeholder="起始日期" />
+                  <span style="font-weight: bold; padding: 0.5rem;">至</span>
+                  <DatePicker v-model="endDate" placeholder="结束日期" />
+                  <button class="pl-button pl-pc-search-button" @click="search">查询</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 自定义范围选择 -->
-        <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
+          <!-- 自定义范围选择 -->
+          <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
+          </div>
         </div>
-      </div>
-      <div class="pl-pc-chart">
-        <!-- 走势图 -->
-        <BIMain style="height: 14rem;">
-          <template #title>
-            <span>走势</span>
-          </template>
-          <Line class="pl-pc-line" :lineData="lineData"></Line>
-        </BIMain>
-
-        <div>
-          <!-- 分析图 -->
-          <BIMain style="height: 5.5rem;">
+        <div class="pl-pc-chart">
+          <!-- 走势图 -->
+          <BIMain style="height: 14rem;">
             <template #title>
-              <span>分析</span>
-              <span class="pl-pc-bi-badge">{{ accountDate }}</span>
+              <span>走势</span>
             </template>
-            <Compare class="w-full" :amountDiff="accountDiff" :rateDiff="rateDiff" :date="secondDate"></Compare>
+            <Line class="pl-pc-line" :lineData="lineData"></Line>
           </BIMain>
 
-          <!-- 计划图 -->
-          <BIMain style="height: 6rem; margin-top: 1rem;">
-            <template #title>
-              <span>计划</span>
-              <span class="pl-pc-bi-badge">{{ accountDate }}</span>
-            </template>
-            <Plan :blockNm="100" :value="planRate" />
+          <div>
+            <!-- 分析图 -->
+            <BIMain style="height: 5.5rem;">
+              <template #title>
+                <span>分析</span>
+                <span class="pl-pc-bi-badge">{{ accountDate }}</span>
+              </template>
+              <Compare class="w-full" :amountDiff="accountDiff" :rateDiff="rateDiff" :date="secondDate"></Compare>
+            </BIMain>
+
+            <!-- 计划图 -->
+            <BIMain style="height: 6rem; margin-top: 1rem;">
+              <template #title>
+                <span>计划</span>
+                <span class="pl-pc-bi-badge">{{ accountDate }}</span>
+              </template>
+              <Plan :blockNm="100" :value="planRate" />
+            </BIMain>
+          </div>
+
+          <!-- 详情表 -->
+          <BIMain style="grid-column: span 2 / span 2;">
+            <Table style="width: 100%;" :times="Array.from(allTimeSet)" :data="tableData"
+              :conf="settingConfData.config" />
           </BIMain>
         </div>
-
-        <!-- 详情表 -->
-        <BIMain style="grid-column: span 2 / span 2;">
-          <Table style="width: 100%;" :times="Array.from(allTimeSet)" :data="tableData"
-            :conf="settingConfData.config" />
-        </BIMain>
       </div>
-    </div>
+    </template>
+
+    <template v-else>
+      <!-- 左侧 -->
+      <div class="pl-pc-main-left">
+        <BookkeepingLatest :settingConfData="settingConfData" :activePage="activePage"
+          @changePage="changePage"></BookkeepingLatest>
+      </div>
+
+      <!-- 右侧 -->
+      <div class="pl-pc-main-right">
+        <div class="pl-pc-chart">
+          <BIMain style="height: 14rem;">
+            <template #title>
+              <span>记账</span>
+            </template>
+            <div class="pl-bookkeeping-panel"></div>
+          </BIMain>
+
+          <BIMain style="height: 14rem;">
+            <template #title>
+              <span>分类</span>
+            </template>
+            <div class="pl-bookkeeping-panel"></div>
+          </BIMain>
+
+          <BIMain style="grid-column: span 2 / span 2; min-height: 16rem;">
+            <template #title>
+              <span>明细</span>
+            </template>
+            <div class="pl-bookkeeping-panel"></div>
+          </BIMain>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -87,6 +124,7 @@ import { getYearDocs, getLedgerListByYearDocId } from '@/api/siyuanApi.js';
 import { showMessage } from 'siyuan';
 
 import Latest from '@/components/Latest.vue';
+import BookkeepingLatest from '@/components/BookkeepingLatest.vue';
 import BIMain from '@/components/bi/BIMain.vue';
 import Line from '@/components/bi/Line.vue';
 import Compare from '@/components/bi/Compare.vue';
@@ -97,6 +135,13 @@ import DatePicker from '@/components/custom/DatePicker.vue';
 const props = defineProps<{
   settingConfData: SettingConfig // 配置数据
 }>();
+
+const activePage = ref<"asset" | "bookkeeping">("asset");
+
+// 切换资产/记账页面
+const changePage = (page: "asset" | "bookkeeping") => {
+  activePage.value = page;
+}
 
 // 资产记录列表 最新记录
 const latestLedgerList = ref<LedgerItem[]>([])
@@ -312,5 +357,9 @@ const onTabChange = (e: any) => {
   padding: 0.15rem 0.35rem;
   border-radius: .5rem;
   margin-left: 0.5rem;
+}
+
+.pl-bookkeeping-panel {
+  min-height: 8rem;
 }
 </style>

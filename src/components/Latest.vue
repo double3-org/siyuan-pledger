@@ -6,7 +6,7 @@
       <!-- 功能切换 -->
       <div class="pl-tabs">
         <label>
-          <input type="radio" name="pl-type" checked />
+          <input type="radio" name="pl-type" :checked="activePage === 'asset'" @change="changePage('asset')" />
           <svg>
             <use xlink:href="#iconD3DB"></use>
           </svg>
@@ -14,7 +14,8 @@
         </label>
 
         <label>
-          <input type="radio" name="pl-type" disabled />
+          <input type="radio" name="pl-type" :checked="activePage === 'bookkeeping'" :disabled="!canChangePage"
+            @change="changePage('bookkeeping')" />
           <svg>
             <use xlink:href="#iconD3List"></use>
           </svg>
@@ -49,9 +50,7 @@
     <div class="pl-latest-list">
       <ul>
         <li v-for="(acc, index) in latestLedgerList" :key="index">
-          <svg>
-            <use :xlink:href="`#${acc.icon}`"></use>
-          </svg>
+          <IconDisplay class="pl-latest-list-icon" :icon="acc.icon" fallback="iconD3List" />
           <div>
             <div class="pl-latest-list-text1">{{ acc.amount.toFixed(2) }}</div>
             <div class="pl-card-footer">{{ acc.name }}</div>
@@ -73,21 +72,34 @@
 <script setup lang="ts">
 import { showMessage } from 'siyuan'
 import { config2TableMDHeader, json2TableMDBody, deepClone } from '../utils/pl-utils.js';
-import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi.js';
+import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi';
 const emit = defineEmits<{
-  (e: "initData"): void
+  (e: "initData"): void,
+  (e: "changePage", value: "asset" | "bookkeeping"): void
 }>()
 
 import LedgerEdit from './LedgerEdit.vue';
 import { alert } from "../utils/dialog-utils.js"
+import IconDisplay from "@/components/custom/IconDisplay.vue";
 
 const props = defineProps<{
   settingConfData: SettingConfig, // 配置数据
   accountDate: string, // 账户日期
   latestLedgerList: LedgerItem[], // 最新资产列表
   accountTotal: string, // 资产总额
-  isMobile?: boolean // 是否为移动端
+  isMobile?: boolean, // 是否为移动端
+  activePage?: "asset" | "bookkeeping", // 当前页面
+  canChangePage?: boolean // 是否启用页面切换
 }>();
+
+const activePage = props.activePage ?? "asset";
+const canChangePage = props.canChangePage ?? false;
+
+// 切换资产/记账页面
+const changePage = (page: "asset" | "bookkeeping") => {
+  if (!canChangePage) return;
+  emit("changePage", page);
+}
 
 // 新增资产记录
 const addLedgerItem = () => {
@@ -264,10 +276,11 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
   max-height: 624px;
 }
 
-.pl-latest-list svg {
+.pl-latest-list-icon {
   height: 1.75rem;
   width: 1.75rem;
   padding-top: 0.25rem;
+  font-size: 1.5rem;
 }
 
 .pl-latest-list li {
@@ -275,7 +288,7 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
   grid-auto-flow: column;
   grid-template-columns: minmax(0, auto) 1fr;
   gap: 1rem;
-  margin: 0 1rem 1rem;
+  margin: 0 0.6rem 1rem;
   padding-bottom: 0.5rem;
   display: grid;
   border-bottom: 1px solid #e5e7eb;
