@@ -95,11 +95,11 @@ function renderChart() {
       axisLabel: {
         color: '#64748b',
         margin: 6,
-        formatter: (value: number) => Math.abs(value) >= 10000 ? `${Math.round(value / 10000)}w` : `${value}`,
+        formatter: (value: number) => Math.abs(value) >= 10000 ? `${Math.round(value / 10000)}w` : `${Math.round(value)}`,
       },
       splitNumber: 4,
-      min: (v: any) => v.min - (v.max - v.min) * 0.1,
-      max: (v: any) => v.max,
+      min: 0,
+      max: (v: any) => getYAxisMax(v.max),
       splitLine: {
         lineStyle: {
           color: '#e5e7eb',
@@ -163,6 +163,14 @@ watch(
  */
 function resizeChart() {
   chartInstance?.resize();
+}
+
+function getYAxisMax(value: number): number {
+  if (value <= 0) return 100;
+  const roughStep = value / 4;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const step = Math.ceil(roughStep / magnitude) * magnitude;
+  return step * 4;
 }
 
 onMounted(() => {
