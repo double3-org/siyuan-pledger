@@ -26,6 +26,7 @@ const defaultSettingConfData: SettingConfig = {
   planNum: "",
   bookkeepingDocumentId: "",
   bookkeepingStorageMode: "",
+  bookkeepingMonthlyBudget: "3000",
   bookkeepingConfig: "",
   iconConfig: "[]",
 };
@@ -193,6 +194,7 @@ function normalizeSettingConf(data: Partial<SettingConfig> | undefined): Setting
   return {
     ...defaultSettingConfData,
     ...(data || {}),
+    bookkeepingMonthlyBudget: data?.bookkeepingMonthlyBudget || "3000",
     iconConfig: data?.iconConfig || "[]",
   };
 }

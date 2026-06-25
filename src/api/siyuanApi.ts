@@ -9,7 +9,7 @@ import { tableMD2json } from "../utils/pl-utils.js";
 export async function getPathAndNoteId(
   id: string,
 ): Promise<{ notebook: string; path: string }> {
-  var resp = await fetchSyncPost("/api/filetree/getPathByID", { id });
+  const resp = await fetchSyncPost("/api/filetree/getPathByID", { id });
   if (resp.code !== 0) {
     console.error("获取文件路径失败:", resp);
     return { notebook: "", path: "" };
@@ -23,7 +23,7 @@ export async function getPathAndNoteId(
  * @return {notebook: string; path: string} 笔记本id 和 文件路径
  */
 export async function getHPath(id: string): Promise<string> {
-  var resp = await fetchSyncPost("/api/filetree/getHPathByID", { id });
+  const resp = await fetchSyncPost("/api/filetree/getHPathByID", { id });
   if (resp.code !== 0) {
     console.error("获取文件路径失败:", resp);
     return "";
@@ -39,8 +39,8 @@ export async function getHPath(id: string): Promise<string> {
  * @return {array} 文件树 id, name, path
  */
 export async function getFileTreeById(id: string): Promise<IFile[]> {
-  var docPathResp = await getPathAndNoteId(id);
-  var fileTreeResp = await fetchSyncPost("/api/filetree/listDocsByPath", {
+  const docPathResp = await getPathAndNoteId(id);
+  const fileTreeResp = await fetchSyncPost("/api/filetree/listDocsByPath", {
     notebook: docPathResp.notebook,
     path: docPathResp.path,
   });
@@ -64,9 +64,9 @@ export async function createDoc(
   title: string,
   pDocId: string,
 ): Promise<string> {
-  var docHPath = await getHPath(pDocId);
-  var docPathResp = await getPathAndNoteId(pDocId);
-  var resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+  const docHPath = await getHPath(pDocId);
+  const docPathResp = await getPathAndNoteId(pDocId);
+  const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
     notebook: docPathResp.notebook,
     path: docHPath + "/" + title,
     markdown: "",
@@ -83,7 +83,7 @@ export async function createDocWithMdByHPath(
   markdown = "",
 ): Promise<string> {
   console.log("准备按路径创建文档", { notebook, path, markdown });
-  var resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+  const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
     notebook,
     path,
     markdown,
@@ -100,7 +100,7 @@ export async function getIDsByHPath(
   path: string,
 ): Promise<string[]> {
   console.log("准备根据人类可读路径获取 IDs", { notebook, path });
-  var resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
+  const resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
     notebook,
     path,
   });
@@ -113,7 +113,7 @@ export async function getIDsByHPath(
  */
 export async function getNotebookConf(notebook: string): Promise<any> {
   console.log("准备获取笔记本配置", notebook);
-  var resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
+  const resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
   console.log("获取笔记本配置结果", resp);
   return resp.code === 0 ? resp.data : undefined;
 }
@@ -141,7 +141,7 @@ export async function insertTableBlock(
   docId: string,
   mkStr: string,
 ): Promise<string> {
-  var resp = await fetchSyncPost("/api/block/insertBlock", {
+  const resp = await fetchSyncPost("/api/block/insertBlock", {
     dataType: "markdown",
     data: mkStr,
     nextID: "",
@@ -160,7 +160,7 @@ export async function insertMarkdownBlock(
   mkStr: string,
 ): Promise<string> {
   console.log("准备插入 markdown 块", { docId, mkStr });
-  var resp = await fetchSyncPost("/api/block/insertBlock", {
+  const resp = await fetchSyncPost("/api/block/insertBlock", {
     dataType: "markdown",
     data: mkStr,
     nextID: "",
@@ -179,7 +179,7 @@ export async function updateBlockContent(
   blockId: string,
   mkStr: string,
 ): Promise<string> {
-  var resp = await fetchSyncPost("/api/block/updateBlock", {
+  const resp = await fetchSyncPost("/api/block/updateBlock", {
     dataType: "markdown",
     data: mkStr,
     id: blockId,
@@ -201,7 +201,7 @@ async function executeSql(sql: string): Promise<IWebSocketData> {
  * @return {boolean} 是否锁定成功
  */
 export async function blockDocument(id: string): Promise<boolean> {
-  var resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+  const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
     id: id,
     attrs: { "custom-sy-readonly": "true" },
   });
@@ -216,7 +216,7 @@ export async function setBlockAttrs(
   attrs: Record<string, string>,
 ): Promise<boolean> {
   console.log("准备设置块属性", { id, attrs });
-  var resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+  const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
     id,
     attrs,
   });
@@ -267,7 +267,7 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
  * 获取当前系统时间 /api/system/currentTime
  */
 export async function getCurrentTime() {
-  var resp = await fetchSyncPost("/api/system/currentTime");
+  const resp = await fetchSyncPost("/api/system/currentTime");
   if (resp.code === 0) {
     return new Date(resp.data).toISOString().split("T")[0];
   }

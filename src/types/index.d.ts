@@ -7,6 +7,7 @@ declare global {
     planNum: string; // 目标金额
     bookkeepingDocumentId: string; // 记账数据存放位置
     bookkeepingStorageMode: string; // 记账数据存放方式
+    bookkeepingMonthlyBudget: string; // 记账每月预算
     bookkeepingConfig: string; // 记账配置内容
     iconConfig: string; // 图标配置内容
   }

@@ -6,20 +6,20 @@
       <!-- 功能切换 -->
       <div class="pl-tabs">
         <label>
-          <input type="radio" name="pl-type" :checked="activePage === 'asset'" @change="changePage('asset')" />
-          <svg>
-            <use xlink:href="#iconD3DB"></use>
-          </svg>
-          资产
-        </label>
-
-        <label>
           <input type="radio" name="pl-type" :checked="activePage === 'bookkeeping'" :disabled="!canChangePage"
             @change="changePage('bookkeeping')" />
           <svg>
             <use xlink:href="#iconD3List"></use>
           </svg>
           记账
+        </label>
+
+        <label>
+          <input type="radio" name="pl-type" :checked="activePage === 'asset'" @change="changePage('asset')" />
+          <svg>
+            <use xlink:href="#iconD3DB"></use>
+          </svg>
+          资产
         </label>
       </div>
 
@@ -36,19 +36,24 @@
     <div class="pl-card">
       <div class="pl-card-title">总资产</div>
       <div class="pl-card-content">
-        {{ accountTotal }}
+        {{ latestLedgerList.length > 0 ? accountTotal : '--' }}
       </div>
       <div class="pl-card-footer">
         <svg>
           <use xlink:href="#iconD3TimeIcon"></use>
         </svg>
-        {{ accountDate }}
+        {{ accountDate || '--' }}
       </div>
     </div>
 
     <!-- 详细列表 -->
     <div class="pl-latest-list">
-      <ul>
+      <div v-if="latestLedgerList.length === 0" class="pl-empty">
+        <svg>
+          <use xlink:href="#iconD3Empty"></use>
+        </svg>
+      </div>
+      <ul v-else>
         <li v-for="(acc, index) in latestLedgerList" :key="index">
           <IconDisplay class="pl-latest-list-icon" :icon="acc.icon" fallback="iconD3List" />
           <div>
@@ -274,6 +279,20 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 624px;
+}
+
+.pl-empty {
+  min-height: 10rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+
+.pl-empty svg {
+  width: 4rem;
+  height: 4rem;
+  fill: currentColor;
 }
 
 .pl-latest-list-icon {

@@ -6,20 +6,20 @@
       <!-- 功能切换 -->
       <div class="pl-tabs">
         <label>
-          <input type="radio" name="pl-type" :checked="activePage === 'asset'" @change="changePage('asset')" />
-          <svg>
-            <use xlink:href="#iconD3DB"></use>
-          </svg>
-          资产
-        </label>
-
-        <label>
           <input type="radio" name="pl-type" :checked="activePage === 'bookkeeping'"
             @change="changePage('bookkeeping')" />
           <svg>
             <use xlink:href="#iconD3List"></use>
           </svg>
           记账
+        </label>
+
+        <label>
+          <input type="radio" name="pl-type" :checked="activePage === 'asset'" @change="changePage('asset')" />
+          <svg>
+            <use xlink:href="#iconD3DB"></use>
+          </svg>
+          资产
         </label>
       </div>
 
@@ -48,34 +48,41 @@
 
     <!-- 记账列表 -->
     <div class="pl-bookkeeping-bill-list">
-      <template v-for="group in visibleBillGroups" :key="group.date">
-        <div class="pl-bookkeeping-date">{{ group.dateLabel }}</div>
-
-        <button v-for="item in group.records" :key="item.id" class="pl-bookkeeping-record">
-          <div class="pl-bookkeeping-icon">
-            <IconDisplay :icon="item.icon" fallback="•" />
-          </div>
-          <div class="pl-bookkeeping-record-body">
-            <div class="pl-bookkeeping-record-main">
-              <div class="pl-bookkeeping-record-title">{{ item.parentName }}</div>
-              <div class="pl-bookkeeping-record-desc">
-                {{ item.childName }}<template v-if="item.remark"> · {{ item.remark }}</template>
-              </div>
-              <div class="pl-bookkeeping-record-time">{{ item.displayTime }}</div>
-            </div>
-            <div class="pl-bookkeeping-record-amount" :class="{ income: item.type === 'income' }">
-              {{ item.type === 'expense' ? '-' : '+' }}{{ item.amount.toFixed(2) }}
-            </div>
-          </div>
-        </button>
-      </template>
-
-      <button v-if="hasMoreBills" class="pl-bookkeeping-more" @click="showMoreBills">
-        查看更多
-      </button>
-      <div v-else class="pl-bookkeeping-end">
-        到底了，没有更多了
+      <div v-if="visibleBillGroups.length === 0" class="pl-empty">
+        <svg>
+          <use xlink:href="#iconD3Empty"></use>
+        </svg>
       </div>
+      <template v-else>
+        <template v-for="group in visibleBillGroups" :key="group.date">
+          <div class="pl-bookkeeping-date">{{ group.dateLabel }}</div>
+
+          <button v-for="item in group.records" :key="item.id" class="pl-bookkeeping-record" @click="editBookkeepingItem(item)">
+            <div class="pl-bookkeeping-icon">
+              <IconDisplay :icon="item.icon" fallback="•" />
+            </div>
+            <div class="pl-bookkeeping-record-body">
+              <div class="pl-bookkeeping-record-main">
+                <div class="pl-bookkeeping-record-title">{{ item.parentName }}</div>
+                <div class="pl-bookkeeping-record-desc">
+                  {{ item.childName }}<template v-if="item.remark"> · {{ item.remark }}</template>
+                </div>
+                <div class="pl-bookkeeping-record-time">{{ item.displayTime }}</div>
+              </div>
+              <div class="pl-bookkeeping-record-amount" :class="{ income: item.type === 'income' }">
+                {{ item.type === 'expense' ? '-' : '+' }}{{ item.amount.toFixed(2) }}
+              </div>
+            </div>
+          </button>
+        </template>
+
+        <button v-if="hasMoreBills" class="pl-bookkeeping-more" @click="showMoreBills">
+          查看更多
+        </button>
+        <div v-else class="pl-bookkeeping-end">
+          到底了，没有更多了
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -95,10 +102,12 @@ import {
   getNotebookConf,
   insertMarkdownBlock,
   setBlockAttrs,
+  updateBlockContent,
 } from '@/api/siyuanApi';
 
 const emit = defineEmits<{
   (e: "changePage", value: "asset" | "bookkeeping"): void
+  (e: "record-saved"): void
 }>();
 
 const props = defineProps<{
@@ -137,14 +146,14 @@ const billGroups = computed(() => {
 const visibleBillGroups = computed(() => billGroups.value.slice(0, visibleDayCount.value));
 const hasMoreBills = computed(() => visibleDayCount.value < billGroups.value.length);
 const visibleBillRecords = computed(() => visibleBillGroups.value.flatMap(group => group.records));
+const todayDateText = computed(() => formatDateValue(new Date()));
 const recentAmountText = computed(() => {
-  const recentDate = billRecords.value[0]?.date || "";
-  const total = billRecords.value.filter(record => record.date === recentDate && record.type === "expense").reduce((sum, record) => {
+  const total = billRecords.value.filter(record => record.date === todayDateText.value && record.type === "expense").reduce((sum, record) => {
     return sum + record.amount;
   }, 0);
   return Math.abs(total).toFixed(2);
 });
-const recentDateText = computed(() => billRecords.value[0]?.date || "");
+const recentDateText = computed(() => todayDateText.value);
 const bookkeepingIconMap = computed(() => {
   const iconMap = new Map<string, string>();
   try {
@@ -175,6 +184,7 @@ const addBookkeepingItem = () => {
         const savedRecord = await saveBookkeepingRecord(record);
         if (savedRecord) {
           upsertBillRecord(savedRecord);
+          emit("record-saved");
           bookkeepingEditDialog?.destroy();
         }
       },
@@ -182,9 +192,32 @@ const addBookkeepingItem = () => {
         const savedRecord = await saveBookkeepingRecord(record);
         if (savedRecord) {
           upsertBillRecord(savedRecord);
+          emit("record-saved");
           reset();
         }
       }
+    }
+  });
+}
+
+// 编辑已有记录时更新原块，不新增一条记录
+const editBookkeepingItem = (item: TimelineRecord) => {
+  const bookkeepingEditDialog = alert(BookkeepingEdit, {
+    title: "编辑记账记录",
+    props: {
+      confData: props.settingConfData,
+      initialRecord: item,
+      onUpdate: async (record: BookkeepingRecord) => {
+        const savedRecord = await saveBookkeepingRecord({
+          ...item,
+          ...record,
+        });
+        if (savedRecord) {
+          upsertBillRecord(savedRecord);
+          emit("record-saved");
+          bookkeepingEditDialog?.destroy();
+        }
+      },
     }
   });
 }
@@ -230,6 +263,11 @@ const showMoreBills = () => {
   visibleDayCount.value += billPageSize;
 }
 
+function formatDateValue(date: Date): string {
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 function formatDateLabel(date: string): string {
   const dateObj = new Date(`${date}T00:00:00`);
   const today = new Date();
@@ -256,13 +294,41 @@ function getCategoryIcon(parentName: string): string {
 }
 
 // 保存记账记录
-async function saveBookkeepingRecord(record: BookkeepingRecord): Promise<TimelineRecord | undefined> {
+async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: string; createdAt?: string; displayTime?: string }): Promise<TimelineRecord | undefined> {
   const settingConf = props.settingConfData;
   console.log("准备保存记账记录", { settingConf, record });
 
   if (!settingConf.bookkeepingDocumentId) {
     showMessage("请先配置记账数据存放位置", 2000, "error");
     console.log("记账数据存放位置为空，保存中断");
+    return undefined;
+  }
+
+  const blockMarkdown = recordToMarkdown(record);
+  console.log("记账块内容", blockMarkdown);
+
+  const now = new Date();
+  if (record.blockId) {
+    await updateBlockContent(record.blockId, blockMarkdown);
+    const pledgeData = {
+      ...record,
+      month: record.date.slice(0, 7),
+      storageMode: settingConf.bookkeepingStorageMode,
+      blockId: record.blockId,
+      createdAt: record.createdAt || now.toISOString(),
+      displayTime: record.displayTime || now.toTimeString().slice(0, 5),
+    };
+    const isAttrSaved = await setBlockAttrs(record.blockId, {
+      "custom-pledge": JSON.stringify(pledgeData),
+    });
+    console.log("记账块更新结果", { isAttrSaved, pledgeData });
+
+    if (isAttrSaved) {
+      showMessage("记账修改成功", 2000, "info");
+      return toTimelineRecord(pledgeData);
+    }
+
+    showMessage("记账已修改，属性写入失败", 3000, "error");
     return undefined;
   }
 
@@ -283,13 +349,9 @@ async function saveBookkeepingRecord(record: BookkeepingRecord): Promise<Timelin
     return undefined;
   }
 
-  const blockMarkdown = recordToMarkdown(record);
-  console.log("记账块内容", blockMarkdown);
-
   const blockId = await insertMarkdownBlock(targetDocumentId, blockMarkdown);
   console.log("记账块已插入", { blockId, targetDocumentId });
 
-  const now = new Date();
   const pledgeData = {
     ...record,
     month: record.date.slice(0, 7),
@@ -442,6 +504,20 @@ function recordToMarkdown(record: BookkeepingRecord): string {
   overflow-x: hidden;
   max-height: 624px;
   padding: 0 0 0.75rem;
+}
+
+.pl-empty {
+  min-height: 10rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+
+.pl-empty svg {
+  width: 4rem;
+  height: 4rem;
+  fill: currentColor;
 }
 
 .pl-bookkeeping-date {

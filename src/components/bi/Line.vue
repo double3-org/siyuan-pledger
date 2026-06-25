@@ -1,9 +1,16 @@
 <template>
-  <div ref="chartRef"></div>
+  <div class="pl-line-main">
+    <div ref="chartRef" class="pl-line-chart"></div>
+    <div v-if="!hasLineData" class="pl-empty">
+      <svg>
+        <use xlink:href="#iconD3Empty"></use>
+      </svg>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import * as echarts from 'echarts/core';
 import { TooltipComponent, GridComponent } from 'echarts/components';
 import { LineChart } from 'echarts/charts';
@@ -24,6 +31,7 @@ const chartRef = ref<HTMLDivElement | null>(null);
 type EChartsInstance = ReturnType<typeof echarts.init>;
 
 let chartInstance: EChartsInstance | null = null;
+const hasLineData = computed(() => props.lineData.some(item => Number.isFinite(item.value)));
 
 /**
  * 初始化图表
@@ -39,6 +47,10 @@ function initChart() {
  */
 function renderChart() {
   if (!chartInstance || !props.lineData) return;
+  if (!hasLineData.value) {
+    chartInstance.clear();
+    return;
+  }
 
   // 数据排序
   const sortedData = [...props.lineData].sort(
@@ -46,8 +58,21 @@ function renderChart() {
   )
 
   const option = {
+    color: ['#4f7df3'],
     xAxis: {
       type: 'time',
+      axisLine: { lineStyle: { color: '#e5e7eb' } },
+      axisTick: { show: false },
+      axisLabel: {
+        color: '#64748b',
+        hideOverlap: true,
+        formatter: (value: number) => {
+          const d = new Date(value)
+          const month = String(d.getMonth() + 1).padStart(2, '0')
+          const day = String(d.getDate()).padStart(2, '0')
+          return `${month}-${day}`
+        }
+      },
       // minInterval: 24 * 60 * 60 * 1000,
       // boundaryGap: false,
       // axisLabel: {
@@ -67,16 +92,26 @@ function renderChart() {
       type: 'value',
       axisLine: { show: false },  // 轴线
       axisTick: { show: false },  // 刻度
-      axisLabel: { show: false },  // 标签
+      axisLabel: {
+        color: '#64748b',
+        margin: 6,
+        formatter: (value: number) => Math.abs(value) >= 10000 ? `${Math.round(value / 10000)}w` : `${value}`,
+      },
       splitNumber: 4,
       min: (v: any) => v.min - (v.max - v.min) * 0.1,
-      max: (v: any) => v.max
+      max: (v: any) => v.max,
+      splitLine: {
+        lineStyle: {
+          color: '#e5e7eb',
+          type: 'dashed',
+        },
+      },
     },
     grid: {
-      top: 20,
-      bottom: 6,
-      left: 4,
-      right: 10
+      top: 26,
+      bottom: 24,
+      left: 36,
+      right: 12
       // outerBounds: true
     },
     tooltip: {
@@ -101,6 +136,10 @@ function renderChart() {
       {
         type: 'line',
         smooth: true,
+        symbolSize: 7,
+        lineStyle: {
+          width: 2.5,
+        },
         data: sortedData.map(i => [i.time, i.value])
       }
     ]
@@ -139,4 +178,31 @@ onBeforeUnmount(() => {
 
 </script>
 
-<style scoped lang="css"></style>
+<style scoped lang="css">
+.pl-line-main {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.pl-line-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.pl-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  background: #fff;
+}
+
+.pl-empty svg {
+  width: 4rem;
+  height: 4rem;
+  fill: currentColor;
+}
+</style>

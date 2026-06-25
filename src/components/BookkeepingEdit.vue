@@ -81,6 +81,7 @@ const emit = defineEmits<{
 
 const props = defineProps<{
   confData: SettingConfig // 配置数据
+  initialRecord?: BookkeepingRecord // 编辑时传入的原记录
 }>();
 
 const bookkeepingType = ref<"expense" | "income">("expense");
@@ -90,8 +91,6 @@ const amountExpression = ref("0");
 const selectedDate = ref("");
 const remark = ref("");
 const isRemarkOpen = ref(false);
-
-getCurrentTime().then(res => selectedDate.value = res);
 
 const keypadKeys = [
   { value: "1", label: "1" },
@@ -134,30 +133,34 @@ function calculateExpression(expression: string): number {
   const tokens = normalizedExpression.match(/\d+(?:\.\d+)?|[+\-*/]/g) || [];
   if (tokens.length === 0) return 0;
 
-  const values: string[] = [];
+  const values: number[] = [];
+  const operators: ("+" | "-")[] = [];
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i];
+    if (token === "+" || token === "-") {
+      operators.push(token);
+      continue;
+    }
     if (token !== "*" && token !== "/") {
-      values.push(token);
+      values.push(Number(token));
       continue;
     }
 
     const prev = values.pop();
     const next = tokens[++i];
-    if (!prev || !next) throw new Error("invalid expression");
+    if (prev === undefined || !next) throw new Error("invalid expression");
     if (token === "/" && Number(next) === 0) throw new Error("divide by zero");
 
     const value = token === "*"
       ? currency(prev, { precision: 8 }).multiply(next).value
       : currency(prev, { precision: 8 }).divide(next).value;
-    values.push(String(value));
+    values.push(value);
   }
 
   let result = currency(values[0] || 0, { precision: 8 });
-  for (let i = 1; i < values.length; i += 2) {
-    const operator = values[i];
-    const value = values[i + 1];
-    result = operator === "+" ? result.add(value || 0) : result.subtract(value || 0);
+  for (let i = 0; i < operators.length; i++) {
+    const value = values[i + 1] || 0;
+    result = operators[i] === "+" ? result.add(value) : result.subtract(value);
   }
 
   return Number(result.value.toFixed(2));
@@ -177,6 +180,21 @@ const canSave = computed(() => currentAmount.value > 0);
 const selectParent = (index: number) => {
   selectedParentIndex.value = index;
   selectedChildIndex.value = 0;
+}
+
+function initFormByRecord(record: BookkeepingRecord): void {
+  bookkeepingType.value = record.type;
+  selectedDate.value = record.date;
+  amountExpression.value = formatAmount(record.amount);
+  remark.value = record.remark || "";
+  isRemarkOpen.value = !!record.remark;
+
+  const parentIndex = bookkeepingConfigList.value.findIndex(item => item.name === record.parentName);
+  if (parentIndex >= 0) {
+    selectedParentIndex.value = parentIndex;
+    const childIndex = (bookkeepingConfigList.value[parentIndex].children || []).findIndex(item => item.name === record.childName);
+    selectedChildIndex.value = childIndex >= 0 ? childIndex : 0;
+  }
 }
 
 const handleKey = (key: string) => {
@@ -324,7 +342,14 @@ const onKeydown = (event: KeyboardEvent) => {
   }
 }
 
-onMounted(() => window.addEventListener("keydown", onKeydown));
+onMounted(() => {
+  if (props.initialRecord) {
+    initFormByRecord(props.initialRecord);
+  } else {
+    getCurrentTime().then(res => selectedDate.value = res);
+  }
+  window.addEventListener("keydown", onKeydown);
+});
 onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 function formatAmount(value: number): string {
@@ -336,6 +361,7 @@ function formatAmount(value: number): string {
 <style scoped lang="css">
 .pl-bookkeeping-edit-main {
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 0.8rem;
   padding: 0.6rem 1.2rem;
   color: #111827;
@@ -477,23 +503,29 @@ function formatAmount(value: number): string {
   grid-template-columns: minmax(0, 1fr) 8rem;
   gap: 0.75rem;
   align-items: stretch;
+  min-height: 0;
 }
 
 .pl-bookkeeping-calculator {
+  display: flex;
   padding: 1rem;
   background-color: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
+  min-height: 0;
 }
 
 .pl-bookkeeping-keypad {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
   gap: 1rem 2rem;
+  min-height: 0;
 }
 
 .pl-bookkeeping-keypad button {
-  min-height: 34px;
+  min-height: 0;
   color: #fff;
   background-color: #2b2b2b;
   border: 0;

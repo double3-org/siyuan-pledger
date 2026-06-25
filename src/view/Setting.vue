@@ -73,6 +73,14 @@
           </select>
         </div>
 
+        <div class="pl-setting-row">
+          <label>
+            每月预算
+            <p>用于后续记账统计，默认 3000 每月</p>
+          </label>
+          <input type="text" v-model="localSetting.bookkeepingMonthlyBudget" placeholder="每月预算" class="pl-form-input" />
+        </div>
+
         <div class="pl-setting-row pl-setting-row-top">
           <label>
             标签配置
@@ -156,6 +164,7 @@ const defaultIconNames = new Set(defaultIconSymbols.map(getSymbolName).filter(Bo
 const localSetting = ref<SettingConfig>({
   bookkeepingDocumentId: "",
   bookkeepingStorageMode: "",
+  bookkeepingMonthlyBudget: "3000",
   bookkeepingConfig: "",
   iconConfig: "[]",
   ...props.settingConfData
