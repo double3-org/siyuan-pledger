@@ -37,11 +37,12 @@
     <section class="pl-bookkeeping-action-area">
       <div class="pl-bookkeeping-calculator">
         <div class="pl-bookkeeping-keypad">
-          <button v-for="key in keypadKeys" :key="key.value" :class="key.className" @click="handleKey(key.value)">
+          <button v-for="key in keypadKeys" :key="key.value"
+            :class="[key.className, { danger: key.value === 'clear' && isEditMode }]" @click="handleKey(key.value)">
             <template v-if="key.value === 'backspace'">⌫</template>
             <template v-else-if="key.value === 'clear'">
-              <span>↻</span>
-              <span>再记</span>
+              <span>{{ isEditMode ? "×" : "↻" }}</span>
+              <span>{{ isEditMode ? "删除" : "再记" }}</span>
             </template>
             <template v-else>{{ key.label }}</template>
           </button>
@@ -76,6 +77,7 @@ import IconDisplay from "@/components/custom/IconDisplay.vue";
 const emit = defineEmits<{
   (e: "update", value: BookkeepingRecord): void
   (e: "saveAgain", value: BookkeepingRecord, reset: () => void): void
+  (e: "deleteRecord"): void
   (e: "close"): void
 }>();
 
@@ -91,6 +93,7 @@ const amountExpression = ref("0");
 const selectedDate = ref("");
 const remark = ref("");
 const isRemarkOpen = ref(false);
+const isEditMode = computed(() => !!props.initialRecord);
 
 const keypadKeys = [
   { value: "1", label: "1" },
@@ -224,6 +227,10 @@ const handleKey = (key: string) => {
   }
 
   if (key === "clear") {
+    if (isEditMode.value) {
+      emit("deleteRecord");
+      return;
+    }
     saveAgain();
   }
 }
@@ -556,6 +563,10 @@ function formatAmount(value: number): string {
   display: grid;
   place-items: center;
   font-size: 0.9rem;
+}
+
+.pl-bookkeeping-keypad button.clear.danger {
+  background-color: #ef4444;
 }
 
 .pl-bookkeeping-keypad button.equal {

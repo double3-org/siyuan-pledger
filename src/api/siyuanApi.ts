@@ -188,6 +188,16 @@ export async function updateBlockContent(
 }
 
 /**
+ * 删除块 /api/block/deleteBlock
+ */
+export async function deleteBlock(blockId: string): Promise<boolean> {
+  const resp = await fetchSyncPost("/api/block/deleteBlock", {
+    id: blockId,
+  });
+  return resp.code === 0;
+}
+
+/**
  * 执行 sql /api/query/sql
  */
 async function executeSql(sql: string): Promise<IWebSocketData> {

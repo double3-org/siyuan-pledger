@@ -96,6 +96,7 @@ import { alert } from "../utils/dialog-utils.js"
 import {
   createDoc,
   createDocWithMdByHPath,
+  deleteBlock,
   getBookkeepingRecordsByPledge,
   getFileTreeById,
   getIDsByHPath,
@@ -119,6 +120,7 @@ type TimelineRecord = BookkeepingRecord & {
   id: string;
   icon: string;
   displayTime: string;
+  blockId?: string;
   createdAt?: string;
 }
 
@@ -218,6 +220,13 @@ const editBookkeepingItem = (item: TimelineRecord) => {
           bookkeepingEditDialog?.destroy();
         }
       },
+      onDeleteRecord: async () => {
+        if (!window.confirm("确定删除这条记账记录吗？")) return;
+        const isDeleted = await deleteBookkeepingRecord(item);
+        if (isDeleted) {
+          bookkeepingEditDialog?.destroy();
+        }
+      },
     }
   });
 }
@@ -250,6 +259,24 @@ function upsertBillRecord(record: TimelineRecord): void {
     ...billRecords.value.filter(item => item.id !== record.id),
   ].sort(sortBillRecord);
   console.log("合并后的记账左侧列表", billRecords.value);
+}
+
+async function deleteBookkeepingRecord(record: TimelineRecord): Promise<boolean> {
+  if (!record.blockId) {
+    showMessage("未找到记账记录块，无法删除", 2000, "error");
+    return false;
+  }
+
+  const isDeleted = await deleteBlock(record.blockId);
+  if (!isDeleted) {
+    showMessage("记账删除失败", 2000, "error");
+    return false;
+  }
+
+  billRecords.value = billRecords.value.filter(item => item.id !== record.id);
+  emit("record-saved");
+  showMessage("记账删除成功", 2000, "info");
+  return true;
 }
 
 function sortBillRecord(a: TimelineRecord, b: TimelineRecord): number {
