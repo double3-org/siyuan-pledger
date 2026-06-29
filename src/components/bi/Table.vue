@@ -1,6 +1,11 @@
 <template>
   <div class="pl-table-main ">
-    <table class="table table-xs table-pin-rows table-pin-cols">
+    <div v-if="!hasTableData" class="pl-empty">
+      <svg>
+        <use xlink:href="#iconD3Empty"></use>
+      </svg>
+    </div>
+    <table v-else class="table table-xs table-pin-rows table-pin-cols">
       <thead>
         <tr>
           <th class="table-left-width table-top-left-cross-1"></th>
@@ -126,6 +131,7 @@ const tableResult = computed(() => {
  * 模板直接使用的行数据
  */
 const tableRows = computed(() => tableResult.value.rows)
+const hasTableData = computed(() => props.data.length > 0 && props.times.length > 0)
 
 /**
  * 底部总计（只在这里 format）
@@ -143,6 +149,21 @@ const sumList = computed(() =>
   overflow: auto;
   position: relative;
   background: #fff;
+}
+
+.pl-empty {
+  height: 100%;
+  min-height: 16rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+}
+
+.pl-empty svg {
+  width: 4rem;
+  height: 4rem;
+  fill: currentColor;
 }
 
 .pl-table-main table {

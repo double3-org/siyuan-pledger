@@ -16,16 +16,8 @@
     <div>
       <div v-for="(lItem, index) in ledgerForm" :key="index">
         <div class="pl-ledger-edit-label">
-          <svg>
-            <use :xlink:href="`#${lItem.icon}`"></use>
-          </svg>
+          <IconDisplay class="pl-ledger-edit-icon" :icon="lItem.icon" fallback="iconD3List" />
           {{ lItem.name }}
-          <button class="pl-button pl-ai-button" @click="aiRecord(lItem)">
-            <svg>
-              <use xlink:href="#iconD3AI"></use>
-            </svg>
-            AI 记
-          </button>
         </div>
         <div class="pl-ledger-edit-form">
           <div class="" v-for="(lc, index) in lItem.children" :key="index">
@@ -49,9 +41,9 @@
 import currency from "currency.js";
 import { ref } from 'vue';
 import { getCurrentTime } from "@/api/siyuanApi"
-import { alert } from "@/utils/dialog-utils"
-import AI from '@/components/AI.vue'
+import { deepClone } from "@/utils/pl-utils"
 import DatePicker from "@/components/custom/DatePicker.vue";
+import IconDisplay from "@/components/custom/IconDisplay.vue";
 
 const emit = defineEmits<{
   (e: "update", value: LedgerItem[]): void
@@ -70,7 +62,7 @@ const isEditMode = !!props.ledgerData?.length
 const selectedDate = ref('')
 
 if (props.ledgerData) {
-  ledgerForm.value = cloneLedgerList(props.ledgerData)
+  ledgerForm.value = deepClone(props.ledgerData)
   selectedDate.value = props.ledgerData[0].time || ''
 } else {
   getCurrentTime().then(res => selectedDate.value = res)
@@ -113,45 +105,6 @@ const close = () => {
   emit('close')
 }
 
-// 处理 AI 记录上传
-const aiRecord = (item: LedgerItem) => {
-  // 打开 AI 组件
-  const dialog = alert(AI, {
-    title: 'AI 记',
-    width: props.isMobile ? "100%" : "700px",
-    height: props.isMobile ? "100%" : "500px",
-    props: {
-      settingConfData: props.confData,
-      itemName: item.name,
-      onAiUpdate: (res: any) => {
-        // 如果 res 是 json 字符串需要转为对象
-        if (typeof res === 'string') {
-          try {
-            res = JSON.parse(res)
-          } catch (error) {
-            console.error('JSON 解析错误:', error)
-            return
-          }
-        }
-        // 赋值给 ledgerForm
-        ledgerForm.value.forEach(
-          (lItem) => {
-            if (lItem.name === item.name) {
-              for (const child of lItem.children) {
-                child.amount = res[child.name] || 0
-              }
-            }
-          }
-        )
-        dialog?.destroy()
-      }
-    }
-  })
-}
-
-function cloneLedgerList(data: LedgerItem[]): LedgerItem[] {
-  return JSON.parse(JSON.stringify(data))
-}
 </script>
 
 <style scoped lang="css">
@@ -169,6 +122,12 @@ function cloneLedgerList(data: LedgerItem[]): LedgerItem[] {
 .pl-ledger-edit-label svg {
   height: 1.2rem;
   width: 1.2rem;
+}
+
+.pl-ledger-edit-icon {
+  height: 1.2rem;
+  width: 1.2rem;
+  font-size: 1.1rem;
 }
 
 .pl-ledger-edit-input {
@@ -190,23 +149,6 @@ function cloneLedgerList(data: LedgerItem[]): LedgerItem[] {
   padding: 0.15rem 0.35rem;
   border-radius: .5rem;
   margin-left: 0.5rem;
-}
-
-.pl-ai-button {
-  background-color: #edf0fe;
-  color: #422ad5;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-}
-
-.pl-ai-button svg {
-  height: 1rem;
-  width: 1rem;
-}
-
-.pl-ai-button:hover {
-  background-color: #422ad5;
-  color: #fff;
 }
 
 .pl-ledger-edit-form fieldset {

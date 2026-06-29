@@ -4,7 +4,8 @@
       {{ modelValue || placeholder || '选择日期' }}
     </button>
 
-    <div popover :id="popoverIdValue" class="pl-datepicker-popover" :style="'position-anchor:--' + popoverIdValue">
+    <div popover :id="popoverIdValue" class="pl-datepicker-popover"
+      :class="{ 'pl-datepicker-popover-top': placement === 'top' }" :style="'position-anchor:--' + popoverIdValue">
       <calendar-date class="pl-datepicker-cally" @change="datePicker">
         <svg slot="previous">
           <use xlink:href="#iconLeft"></use>
@@ -24,6 +25,7 @@ import { computed } from 'vue'
 const props = defineProps<{
   modelValue: string;
   placeholder?: string;
+  placement?: "top" | "bottom";
 }>()
 
 const emit = defineEmits<{
@@ -38,6 +40,7 @@ function datePicker(event: Event) {
 
 const popoverId = 'datepicker-popover-' + Math.random().toString(36).substring(2, 11)
 const popoverIdValue = computed(() => popoverId)
+const placement = computed(() => props.placement || "bottom")
 </script>
 
 <style scoped lang="css">
@@ -55,6 +58,13 @@ const popoverIdValue = computed(() => popoverId)
   left: anchor(left);
   margin: 0;
   margin-top: 0.5rem;
+}
+
+.pl-datepicker-popover-top {
+  top: auto;
+  bottom: anchor(top);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
 }
 
 calendar-date {

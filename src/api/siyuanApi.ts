@@ -9,7 +9,7 @@ import { tableMD2json } from "../utils/pl-utils.js";
 export async function getPathAndNoteId(
   id: string,
 ): Promise<{ notebook: string; path: string }> {
-  var resp = await fetchSyncPost("/api/filetree/getPathByID", { id });
+  const resp = await fetchSyncPost("/api/filetree/getPathByID", { id });
   if (resp.code !== 0) {
     console.error("获取文件路径失败:", resp);
     return { notebook: "", path: "" };
@@ -23,7 +23,7 @@ export async function getPathAndNoteId(
  * @return {notebook: string; path: string} 笔记本id 和 文件路径
  */
 export async function getHPath(id: string): Promise<string> {
-  var resp = await fetchSyncPost("/api/filetree/getHPathByID", { id });
+  const resp = await fetchSyncPost("/api/filetree/getHPathByID", { id });
   if (resp.code !== 0) {
     console.error("获取文件路径失败:", resp);
     return "";
@@ -39,8 +39,8 @@ export async function getHPath(id: string): Promise<string> {
  * @return {array} 文件树 id, name, path
  */
 export async function getFileTreeById(id: string): Promise<IFile[]> {
-  var docPathResp = await getPathAndNoteId(id);
-  var fileTreeResp = await fetchSyncPost("/api/filetree/listDocsByPath", {
+  const docPathResp = await getPathAndNoteId(id);
+  const fileTreeResp = await fetchSyncPost("/api/filetree/listDocsByPath", {
     notebook: docPathResp.notebook,
     path: docPathResp.path,
   });
@@ -64,13 +64,67 @@ export async function createDoc(
   title: string,
   pDocId: string,
 ): Promise<string> {
-  var docHPath = await getHPath(pDocId);
-  var docPathResp = await getPathAndNoteId(pDocId);
-  var resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+  const docHPath = await getHPath(pDocId);
+  const docPathResp = await getPathAndNoteId(pDocId);
+  const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
     notebook: docPathResp.notebook,
     path: docHPath + "/" + title,
     markdown: "",
   });
+  return resp.data;
+}
+
+/**
+ * 按人类可读路径创建文档 /api/filetree/createDocWithMd
+ */
+export async function createDocWithMdByHPath(
+  notebook: string,
+  path: string,
+  markdown = "",
+): Promise<string> {
+  const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+    notebook,
+    path,
+    markdown,
+  });
+  if (resp.code !== 0) {
+    console.error("按路径创建文档失败:", resp);
+    return "";
+  }
+  return resp.data;
+}
+
+/**
+ * 根据人类可读路径获取文档 ID /api/filetree/getIDsByHPath
+ */
+export async function getIDsByHPath(
+  notebook: string,
+  path: string,
+): Promise<string[]> {
+  const resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
+    notebook,
+    path,
+  });
+  if (resp.code !== 0) {
+    console.error("根据人类可读路径获取 IDs 失败:", resp);
+    return [];
+  }
+  if (!Array.isArray(resp.data)) {
+    console.error("根据人类可读路径获取 IDs 返回格式错误:", resp);
+    return [];
+  }
+  return resp.data;
+}
+
+/**
+ * 获取笔记本配置 /api/notebook/getNotebookConf
+ */
+export async function getNotebookConf(notebook: string): Promise<any> {
+  const resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
+  if (resp.code !== 0) {
+    console.error("获取笔记本配置失败:", resp);
+    return undefined;
+  }
   return resp.data;
 }
 
@@ -97,7 +151,25 @@ export async function insertTableBlock(
   docId: string,
   mkStr: string,
 ): Promise<string> {
-  var resp = await fetchSyncPost("/api/block/insertBlock", {
+  const resp = await fetchSyncPost("/api/block/insertBlock", {
+    dataType: "markdown",
+    data: mkStr,
+    nextID: "",
+    previousID: "",
+    parentID: docId,
+  });
+  return resp.data[0].doOperations[0].id;
+}
+
+/**
+ * 根据文档id在文档中插入 markdown 块 /api/block/insertBlock
+ * @return 块id
+ */
+export async function insertMarkdownBlock(
+  docId: string,
+  mkStr: string,
+): Promise<string> {
+  const resp = await fetchSyncPost("/api/block/insertBlock", {
     dataType: "markdown",
     data: mkStr,
     nextID: "",
@@ -115,12 +187,22 @@ export async function updateBlockContent(
   blockId: string,
   mkStr: string,
 ): Promise<string> {
-  var resp = await fetchSyncPost("/api/block/updateBlock", {
+  const resp = await fetchSyncPost("/api/block/updateBlock", {
     dataType: "markdown",
     data: mkStr,
     id: blockId,
   });
   return resp.data[0].doOperations[0].id;
+}
+
+/**
+ * 删除块 /api/block/deleteBlock
+ */
+export async function deleteBlock(blockId: string): Promise<boolean> {
+  const resp = await fetchSyncPost("/api/block/deleteBlock", {
+    id: blockId,
+  });
+  return resp.code === 0;
 }
 
 /**
@@ -137,7 +219,7 @@ async function executeSql(sql: string): Promise<IWebSocketData> {
  * @return {boolean} 是否锁定成功
  */
 export async function blockDocument(id: string): Promise<boolean> {
-  var resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+  const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
     id: id,
     attrs: { "custom-sy-readonly": "true" },
   });
@@ -145,10 +227,61 @@ export async function blockDocument(id: string): Promise<boolean> {
 }
 
 /**
+ * 设置块属性 /api/attr/setBlockAttrs
+ */
+export async function setBlockAttrs(
+  id: string,
+  attrs: Record<string, string>,
+): Promise<boolean> {
+  const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+    id,
+    attrs,
+  });
+  return resp.code === 0;
+}
+
+/**
+ * 通过块自定义属性读取记账记录 /api/query/sql
+ */
+export async function getBookkeepingRecordsByPledge(storageMode?: string): Promise<(BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string })[]> {
+  const sql = storageMode
+    ? `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`
+    : "SELECT block_id,value FROM attributes WHERE name = 'custom-pledge'";
+  const resp = await executeSql(sql);
+
+  if (resp.code !== 0 || !Array.isArray(resp.data)) {
+    return [];
+  }
+
+  const records: (BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string })[] = [];
+  for (const item of resp.data) {
+    try {
+      const data = JSON.parse(item.value);
+      if (!data?.date || !data?.parentName || !data?.childName) continue;
+      records.push({
+        type: data.type,
+        date: data.date,
+        parentName: data.parentName,
+        childName: data.childName,
+        amount: Number(data.amount) || 0,
+        remark: data.remark || "",
+        blockId: data.blockId || item.block_id,
+        ...(data.displayTime ? { displayTime: data.displayTime } : {}),
+        ...(data.createdAt ? { createdAt: data.createdAt } : {}),
+      });
+    } catch (error) {
+      console.error("解析记账记录属性失败", { item, error });
+    }
+  }
+
+  return records.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
  * 获取当前系统时间 /api/system/currentTime
  */
 export async function getCurrentTime() {
-  var resp = await fetchSyncPost("/api/system/currentTime");
+  const resp = await fetchSyncPost("/api/system/currentTime");
   if (resp.code === 0) {
     return new Date(resp.data).toISOString().split("T")[0];
   }
