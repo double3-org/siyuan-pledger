@@ -38,7 +38,7 @@
   提供了插件开发的基础模板，为本项目的实现提供了重要支持
    [去看看](https://github.com/frostime/plugin-sample-vite) 
 
-  **siyuan-plugin-cli**  
+- **siyuan-plugin-cli**  
   为 SiYuan 插件开发的一些 CLI 工具
    [去看看](https://github.com/frostime/siyuan-plugin-cli) 
 
