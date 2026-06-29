@@ -657,7 +657,10 @@ function sumBookkeepingRecords(records: BookkeepingRecord[], type: BookkeepingRe
 }
 
 function parseBookkeepingAmount(value: string | undefined, fallback = 0): number {
-  const amount = Number(String(value || "").replace(/,/g, ""));
+  const normalizedValue = String(value ?? "").replace(/,/g, "").trim();
+  if (!normalizedValue) return fallback;
+
+  const amount = Number(normalizedValue);
   return Number.isFinite(amount) ? amount : fallback;
 }
 
@@ -976,7 +979,8 @@ async function initData() {
   accountDiff.value = currency(sum).subtract(secondSum).value;
   rateDiff.value = secondSum === 0 ? 0 : currency(accountDiff.value, { precision: 4 }).divide(Math.abs(secondSum)).multiply(100).value;
   // 右侧计划图, 计算计划完成率
-  planRate.value = sum / (Number(props.settingConfData.planNum ?? 1000000));
+  const planTarget = parseBookkeepingAmount(props.settingConfData.planNum, 1000000);
+  planRate.value = planTarget > 0 ? sum / planTarget : 0;
 }
 
 async function getAssetLedgerListByDateRange(rangeStartDate: string, rangeEndDate: string): Promise<LedgerItem[]> {

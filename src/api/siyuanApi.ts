@@ -82,13 +82,15 @@ export async function createDocWithMdByHPath(
   path: string,
   markdown = "",
 ): Promise<string> {
-  console.log("准备按路径创建文档", { notebook, path, markdown });
   const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
     notebook,
     path,
     markdown,
   });
-  console.log("按路径创建文档结果", resp);
+  if (resp.code !== 0) {
+    console.error("按路径创建文档失败:", resp);
+    return "";
+  }
   return resp.data;
 }
 
@@ -99,23 +101,31 @@ export async function getIDsByHPath(
   notebook: string,
   path: string,
 ): Promise<string[]> {
-  console.log("准备根据人类可读路径获取 IDs", { notebook, path });
   const resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
     notebook,
     path,
   });
-  console.log("根据人类可读路径获取 IDs 结果", resp);
-  return resp.code === 0 && Array.isArray(resp.data) ? resp.data : [];
+  if (resp.code !== 0) {
+    console.error("根据人类可读路径获取 IDs 失败:", resp);
+    return [];
+  }
+  if (!Array.isArray(resp.data)) {
+    console.error("根据人类可读路径获取 IDs 返回格式错误:", resp);
+    return [];
+  }
+  return resp.data;
 }
 
 /**
  * 获取笔记本配置 /api/notebook/getNotebookConf
  */
 export async function getNotebookConf(notebook: string): Promise<any> {
-  console.log("准备获取笔记本配置", notebook);
   const resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
-  console.log("获取笔记本配置结果", resp);
-  return resp.code === 0 ? resp.data : undefined;
+  if (resp.code !== 0) {
+    console.error("获取笔记本配置失败:", resp);
+    return undefined;
+  }
+  return resp.data;
 }
 
 /**
@@ -159,7 +169,6 @@ export async function insertMarkdownBlock(
   docId: string,
   mkStr: string,
 ): Promise<string> {
-  console.log("准备插入 markdown 块", { docId, mkStr });
   const resp = await fetchSyncPost("/api/block/insertBlock", {
     dataType: "markdown",
     data: mkStr,
@@ -167,7 +176,6 @@ export async function insertMarkdownBlock(
     previousID: "",
     parentID: docId,
   });
-  console.log("插入 markdown 块结果", resp);
   return resp.data[0].doOperations[0].id;
 }
 
@@ -225,12 +233,10 @@ export async function setBlockAttrs(
   id: string,
   attrs: Record<string, string>,
 ): Promise<boolean> {
-  console.log("准备设置块属性", { id, attrs });
   const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
     id,
     attrs,
   });
-  console.log("设置块属性结果", resp);
   return resp.code === 0;
 }
 
@@ -241,9 +247,7 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
   const sql = storageMode
     ? `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`
     : "SELECT block_id,value FROM attributes WHERE name = 'custom-pledge'";
-  console.log("准备查询记账记录", sql);
   const resp = await executeSql(sql);
-  console.log("查询记账记录结果", resp);
 
   if (resp.code !== 0 || !Array.isArray(resp.data)) {
     return [];

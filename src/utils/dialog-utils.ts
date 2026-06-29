@@ -23,7 +23,7 @@ export function alert(component: Component, options: VueDialogOptions = {}) {
     height:
       options.height ??
       (isMobile ? "100%" : "600px"),
-    content: `<div id="${mountId}" style="height:100%; overflow: auto;"></div>`,
+    content: `<div id="${mountId}" style="height:100%; overflow:${isMobile ? "hidden" : "auto"};"></div>`,
   });
 
 

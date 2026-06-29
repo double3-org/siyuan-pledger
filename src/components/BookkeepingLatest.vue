@@ -233,10 +233,8 @@ const editBookkeepingItem = (item: TimelineRecord) => {
 
 // 初始化记账记录
 async function initBookkeepingRecords(): Promise<void> {
-  console.log("开始初始化记账左侧记录");
   const records = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
   billRecords.value = records.map(toTimelineRecord).sort(sortBillRecord);
-  console.log("记账左侧记录初始化完成", billRecords.value);
 }
 
 function toTimelineRecord(
@@ -253,12 +251,10 @@ function toTimelineRecord(
 }
 
 function upsertBillRecord(record: TimelineRecord): void {
-  console.log("准备合并新保存的记账记录到左侧列表", record);
   billRecords.value = [
     record,
     ...billRecords.value.filter(item => item.id !== record.id),
   ].sort(sortBillRecord);
-  console.log("合并后的记账左侧列表", billRecords.value);
 }
 
 async function deleteBookkeepingRecord(record: TimelineRecord): Promise<boolean> {
@@ -323,16 +319,13 @@ function getCategoryIcon(parentName: string): string {
 // 保存记账记录
 async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: string; createdAt?: string; displayTime?: string }): Promise<TimelineRecord | undefined> {
   const settingConf = props.settingConfData;
-  console.log("准备保存记账记录", { settingConf, record });
 
   if (!settingConf.bookkeepingDocumentId) {
     showMessage("请先配置记账数据存放位置", 2000, "error");
-    console.log("记账数据存放位置为空，保存中断");
     return undefined;
   }
 
   const blockMarkdown = recordToMarkdown(record);
-  console.log("记账块内容", blockMarkdown);
 
   const now = new Date();
   if (record.blockId) {
@@ -348,7 +341,6 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
     const isAttrSaved = await setBlockAttrs(record.blockId, {
       "custom-pledge": JSON.stringify(pledgeData),
     });
-    console.log("记账块更新结果", { isAttrSaved, pledgeData });
 
     if (isAttrSaved) {
       showMessage("记账修改成功", 2000, "info");
@@ -366,18 +358,15 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
     targetDocumentId = await getDailyBookkeepingDocumentId(record, settingConf);
   } else {
     showMessage("未知的记账存放方式", 2000, "error");
-    console.log("未知的记账存放方式，保存中断", settingConf.bookkeepingStorageMode);
     return undefined;
   }
 
   if (!targetDocumentId) {
     showMessage("未找到记账写入文档", 2000, "error");
-    console.log("未找到记账写入文档，保存中断", { record, settingConf });
     return undefined;
   }
 
   const blockId = await insertMarkdownBlock(targetDocumentId, blockMarkdown);
-  console.log("记账块已插入", { blockId, targetDocumentId });
 
   const pledgeData = {
     ...record,
@@ -392,7 +381,6 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
     "custom-pledge": JSON.stringify(pledgeData),
   };
   const isAttrSaved = await setBlockAttrs(blockId, attrs);
-  console.log("记账块属性写入结果", { isAttrSaved, attrs });
 
   if (isAttrSaved) {
     showMessage("记账保存成功", 2000, "info");
@@ -405,34 +393,26 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
 
 async function getCentralBookkeepingDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
   const monthTitle = record.date.slice(0, 7);
-  console.log("记账集中存放目标月份", monthTitle);
 
   const fileList = await getFileTreeById(settingConf.bookkeepingDocumentId);
-  console.log("记账数据存放位置下文件列表", fileList);
 
   const monthFile = fileList.find((file: any) => file.name === monthTitle + ".sy" || file.name === monthTitle);
   if (monthFile) {
-    console.log("找到已有记账月份文件", monthFile);
     return monthFile.id;
   }
 
   const monthDocumentId = await createDoc(monthTitle, settingConf.bookkeepingDocumentId);
-  console.log("创建记账月份文件", { monthTitle, monthDocumentId });
   return monthDocumentId;
 }
 
 async function getDailyBookkeepingDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
-  console.log("准备按日期存放记账记录", { record, settingConf });
-
   const notebookId = settingConf.bookkeepingDocumentId;
   if (!notebookId) {
-    console.log("按日期存放需要配置笔记本 ID");
     return "";
   }
 
   const notebookConf = await getNotebookConf(notebookId);
   const dailyNoteSavePath = notebookConf?.conf?.dailyNoteSavePath;
-  console.log("读取到新建日记配置", { notebook: notebookId, dailyNoteSavePath, notebookConf });
 
   if (!dailyNoteSavePath) {
     showMessage("未读取到新建日记路径配置", 3000, "error");
@@ -447,12 +427,10 @@ async function getDailyBookkeepingDocumentId(record: BookkeepingRecord, settingC
 
   const ids = await getIDsByHPath(notebookId, dailyNotePath);
   if (ids.length > 0) {
-    console.log("找到已有日记文档", { dailyNotePath, ids });
     return ids[0];
   }
 
   const dailyNoteDocumentId = await createDocWithMdByHPath(notebookId, dailyNotePath, "");
-  console.log("创建日记文档", { dailyNotePath, dailyNoteDocumentId });
   return dailyNoteDocumentId;
 }
 
@@ -464,7 +442,6 @@ function renderDailyNotePath(template: string, date: string): string {
   );
 
   if (renderedPath.includes("{{")) {
-    console.log("新建日记路径模板存在暂不支持的表达式", { template, renderedPath });
     return "";
   }
 

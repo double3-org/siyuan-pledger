@@ -1,16 +1,24 @@
 <template>
   <div class="pl-plan-main">
-    <div class="pl-plan-block" v-for="i in blockNm" :key="i" :class="{ active: i <= value * 100 }"></div>
+    <div class="pl-plan-block" v-for="i in blockNm" :key="i" :class="{ active: i <= activeBlockCount }"></div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 interface Props {
   blockNm: number
   value: number
 }
 
 const props = defineProps<Props>()
+
+const activeBlockCount = computed(() => {
+  const safeValue = Number.isFinite(props.value) ? props.value : 0;
+  const rate = Math.min(Math.max(safeValue, 0), 1);
+  return Math.floor(rate * props.blockNm);
+})
 </script>
 
 <style scoped lang="css">

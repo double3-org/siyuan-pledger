@@ -79,6 +79,11 @@ export default class PersonalLedgerPlug extends Plugin {
 
   // 加载设置面板
   openSetting(): void {
+    if (this.isMobile) {
+      showMessage("请使用桌面端进行配置", 3000, "info");
+      return;
+    }
+
     let dialog = new Dialog({
       title: "pLedger 插件设置",
       content: `<div id="SettingPanel" style="height: 100%;"></div>`,
@@ -120,6 +125,7 @@ export default class PersonalLedgerPlug extends Plugin {
       // 移动端弹窗打开
       const mainView = alert(MobileView, {
         title: "pLedger",
+        isMobile: true,
         props: {
           settingConfData: settingConfData.value,
         },

@@ -38,7 +38,8 @@
       <div class="pl-bookkeeping-calculator">
         <div class="pl-bookkeeping-keypad">
           <button v-for="key in keypadKeys" :key="key.value"
-            :class="[key.className, { danger: key.value === 'clear' && isEditMode }]" @click="handleKey(key.value)">
+            :class="[key.className, { danger: key.value === 'clear' && isEditMode }]"
+            :disabled="key.value === 'save' && !canSave" @click="handleKey(key.value)">
             <template v-if="key.value === 'backspace'">⌫</template>
             <template v-else-if="key.value === 'clear'">
               <span>{{ isEditMode ? "×" : "↻" }}</span>
@@ -84,6 +85,7 @@ const emit = defineEmits<{
 const props = defineProps<{
   confData: SettingConfig // 配置数据
   initialRecord?: BookkeepingRecord // 编辑时传入的原记录
+  isMobile?: boolean // 是否为移动端
 }>();
 
 const bookkeepingType = ref<"expense" | "income">("expense");
@@ -95,7 +97,7 @@ const remark = ref("");
 const isRemarkOpen = ref(false);
 const isEditMode = computed(() => !!props.initialRecord);
 
-const keypadKeys = [
+const desktopKeypadKeys = [
   { value: "1", label: "1" },
   { value: "2", label: "2" },
   { value: "3", label: "3" },
@@ -115,6 +117,29 @@ const keypadKeys = [
   { value: ".", label: "." },
   { value: "=", label: "=", className: "equal" },
 ];
+
+const mobileKeypadKeys = [
+  { value: "clear", label: "再记", className: "clear" },
+  { value: "backspace", label: "退格", className: "delete" },
+  { value: "/", label: "÷", className: "operator" },
+  { value: "7", label: "7" },
+  { value: "8", label: "8" },
+  { value: "9", label: "9" },
+  { value: "*", label: "×", className: "operator" },
+  { value: "4", label: "4" },
+  { value: "5", label: "5" },
+  { value: "6", label: "6" },
+  { value: "-", label: "-", className: "operator" },
+  { value: "1", label: "1" },
+  { value: "2", label: "2" },
+  { value: "3", label: "3" },
+  { value: "+", label: "+", className: "operator" },
+  { value: "=", label: "=", className: "equal" },
+  { value: "0", label: "0" },
+  { value: ".", label: "." },
+  { value: "save", label: "保存", className: "save" },
+];
+const keypadKeys = computed(() => props.isMobile ? mobileKeypadKeys : desktopKeypadKeys);
 
 // 记账配置分类
 const bookkeepingConfigList = computed<LedgerItem[]>(() => {
@@ -226,6 +251,11 @@ const handleKey = (key: string) => {
     return;
   }
 
+  if (key === "save") {
+    confirm();
+    return;
+  }
+
   if (key === "clear") {
     if (isEditMode.value) {
       emit("deleteRecord");
@@ -269,7 +299,6 @@ const confirm = () => {
   const data = getBookkeepingRecord();
   if (!data) return;
 
-  console.log("记账数据", data);
   emit("update", data);
 }
 
@@ -277,7 +306,6 @@ const saveAgain = () => {
   const data = getBookkeepingRecord();
   if (!data) return;
 
-  console.log("再记数据", data);
   emit("saveAgain", data, resetForm);
 }
 
@@ -445,7 +473,8 @@ function formatAmount(value: number): string {
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  padding-bottom: 0.1rem;
+  padding-bottom: 0.3rem;
+  margin-bottom: 0.4rem;
 }
 
 .pl-bookkeeping-children {
@@ -631,21 +660,140 @@ function formatAmount(value: number): string {
 }
 
 @media (max-width: 768px) {
-  .pl-bookkeeping-hero,
-  .pl-bookkeeping-meta {
+  .pl-bookkeeping-edit-main {
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-radius: 0;
+    box-sizing: border-box;
+  }
+
+  .pl-bookkeeping-hero {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .pl-bookkeeping-type-tabs {
+    height: 2.55rem;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+  }
+
+  .pl-bookkeeping-type-tabs label {
+    border-radius: 0.4rem;
+    font-size: 0.95rem;
+  }
+
+  .pl-bookkeeping-amount {
+    height: 4rem;
+    justify-content: end;
+    padding: 0 1rem;
+    border-radius: 0.5rem;
+    font-size: 2.4rem;
+    line-height: 1;
+  }
+
+  .pl-bookkeeping-category-panel {
+    gap: 0.55rem;
+    padding: 0;
+  }
+
+  .pl-bookkeeping-category {
+    gap: 0.5rem;
+    padding-bottom: 0.35rem;
+  }
+
+  .pl-bookkeeping-children {
+    gap: 0.45rem;
+  }
+
+  .pl-bookkeeping-parent-tag,
+  .pl-bookkeeping-child-tag {
+    height: 2rem;
+    min-width: 0;
+    border-radius: 0.45rem;
+    font-size: 0.85rem;
+  }
+
+  .pl-bookkeeping-parent-tag {
+    padding: 0 0.6rem;
+  }
+
+  .pl-bookkeeping-child-tag {
+    min-width: 3.8rem;
+    padding: 0 0.55rem;
   }
 
   .pl-bookkeeping-action-area {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    min-height: auto;
+  }
+
+  .pl-bookkeeping-calculator {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
   }
 
   .pl-bookkeeping-keypad {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: 3.25rem;
+    gap: 0.55rem;
+    min-height: auto;
+  }
+
+  .pl-bookkeeping-keypad button {
+    min-height: 3.25rem;
+    border-radius: 0.5rem;
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  .pl-bookkeeping-keypad button.delete,
+  .pl-bookkeeping-keypad button.equal {
+    grid-column: span 1 / span 1;
+  }
+
+  .pl-bookkeeping-keypad button.clear {
+    grid-column: span 2 / span 2;
+  }
+
+  .pl-bookkeeping-keypad button.clear {
+    font-size: 0.85rem;
+  }
+
+  .pl-bookkeeping-keypad button.save {
+    background-color: #16a34a;
+    font-size: 0.95rem;
   }
 
   .pl-bookkeeping-confirm {
-    height: 56px;
+    display: none;
+  }
+
+  .pl-bookkeeping-meta {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .pl-bookkeeping-meta :deep(.pl-datepicker),
+  .pl-bookkeeping-meta :deep(.pl-datepicker .pl-button),
+  .pl-bookkeeping-remark-toggle,
+  .pl-bookkeeping-remark {
+    width: 100%;
+  }
+
+  .pl-bookkeeping-remark-toggle,
+  .pl-bookkeeping-remark {
+    height: 3rem;
+    border-radius: 0.5rem;
   }
 }
 </style>
