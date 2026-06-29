@@ -17,7 +17,7 @@
         <div class="pl-setting-row">
           <label>
             数据存放位置
-            <p>集中存放请填写文档 ID；按日期存放请填写笔记本 ID</p>
+            <p>请复制文档id到此处, 请不要频繁调整该配置</p>
           </label>
           <input type="text" v-model="localSetting.documentId" placeholder="文档id" class="pl-form-input" />
         </div>
@@ -122,7 +122,7 @@
         <div class="pl-setting-row pl-setting-row-top">
           <label>
             已有图标
-            <p>这里只展示用户维护的图标；内置默认图标会自动注册</p>
+            <p>用户维护的图标</p>
           </label>
           <div class="pl-icon-list">
             <div v-if="!iconList.length" class="pl-icon-empty">暂无自定义图标</div>
