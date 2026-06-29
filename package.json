@@ -1,6 +1,6 @@
 {
   "name": "siyuan-pledger",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "type": "module",
   "description": "A personal ledger plugin for SiYuan.",
   "repository": "https://github.com/double3-org/siyuan-pledger",
