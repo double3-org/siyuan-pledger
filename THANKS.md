@@ -43,11 +43,11 @@
    [去看看](https://github.com/frostime/siyuan-plugin-cli) 
 
 - **TRAE**  
-  一个能理解需求、调动工具、独立完成各类开发任务的超级 AI 开发工程师，助你高效推进项目每一步  
+  一个能理解需求、调动工具、独立完成各类开发任务的超级 AI 开发工程师，助你高效推进项目每一步
    [去看看](https://www.trae.cn/) 
 
 - **Codex**  
-  助力构建并交付产品的 AI 编程智能体 — 由 ChatGPT 提供技术支持  
+  助力构建并交付产品的 AI 编程智能体 — 由 ChatGPT 提供技术支持
   PS：本项目消耗9000万token  
    [去看看](https://openai.com/codex/)
 
@@ -56,9 +56,9 @@
    [去看看](https://github.com/glink25/Cent) 
 
 - **字体与图片**  
-  封面图使用了[Craig Rowtham](https://www.pexels.com/zh-cn/@craig-rowtham-2151756141/)的图片  
+  封面图使用了[Craig Rowtham](https://www.pexels.com/zh-cn/@craig-rowtham-2151756141/)的图片
   [去看看](https://www.pexels.com/zh-cn/photo/31837419/)  
-  封面图使用了 [阿里巴巴普惠体 3.0 字体](https://www.alibabafonts.com/#/font)  
+  封面图使用了 [阿里巴巴普惠体 3.0 字体](https://www.alibabafonts.com/#/font)
    [去看看](https://www.alibabafonts.com/#/font)  
 
 ---
