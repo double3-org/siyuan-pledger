@@ -48,8 +48,8 @@
 
 - **Codex**  
   助力构建并交付产品的 AI 编程智能体 — 由 ChatGPT 提供技术支持
+   [去看看](https://openai.com/codex/)  
   PS：本项目消耗9000万token  
-   [去看看](https://openai.com/codex/)
 
 - **Cent**
   一个完全免费、开源的多人协作记账 Web App
