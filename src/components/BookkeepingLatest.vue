@@ -121,6 +121,7 @@ type TimelineRecord = BookkeepingRecord & {
   icon: string;
   displayTime: string;
   blockId?: string;
+  documentId?: string;
   createdAt?: string;
 }
 
@@ -238,7 +239,7 @@ async function initBookkeepingRecords(): Promise<void> {
 }
 
 function toTimelineRecord(
-  record: BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string },
+  record: BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string },
   index = 0,
 ): TimelineRecord {
   return {
@@ -246,6 +247,7 @@ function toTimelineRecord(
     id: record.blockId || `${record.date}-${index}`,
     icon: getCategoryIcon(record.parentName),
     displayTime: record.displayTime || "",
+    documentId: record.documentId,
     createdAt: record.createdAt,
   };
 }
@@ -317,7 +319,7 @@ function getCategoryIcon(parentName: string): string {
 }
 
 // 保存记账记录
-async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: string; createdAt?: string; displayTime?: string }): Promise<TimelineRecord | undefined> {
+async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: string; documentId?: string; createdAt?: string; displayTime?: string }): Promise<TimelineRecord | undefined> {
   const settingConf = props.settingConfData;
 
   if (!settingConf.bookkeepingDocumentId) {
@@ -329,11 +331,39 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
 
   const now = new Date();
   if (record.blockId) {
+    const targetDocumentId = record.documentId ? await getBookkeepingTargetDocumentId(record, settingConf) : "";
+    if (targetDocumentId && record.documentId && targetDocumentId !== record.documentId) {
+      const blockId = await insertMarkdownBlock(targetDocumentId, blockMarkdown);
+      const pledgeData = {
+        ...record,
+        month: record.date.slice(0, 7),
+        storageMode: settingConf.bookkeepingStorageMode,
+        documentId: targetDocumentId,
+        blockId,
+        createdAt: record.createdAt || now.toISOString(),
+        displayTime: record.displayTime || now.toTimeString().slice(0, 5),
+      };
+      const isAttrSaved = await setBlockAttrs(blockId, {
+        "custom-pledge": JSON.stringify(pledgeData),
+      });
+
+      if (!isAttrSaved) {
+        await deleteBlock(blockId);
+        showMessage("记账已移动，属性写入失败", 3000, "error");
+        return undefined;
+      }
+
+      await deleteBlock(record.blockId);
+      showMessage("记账修改成功", 2000, "info");
+      return toTimelineRecord(pledgeData);
+    }
+
     await updateBlockContent(record.blockId, blockMarkdown);
     const pledgeData = {
       ...record,
       month: record.date.slice(0, 7),
       storageMode: settingConf.bookkeepingStorageMode,
+      documentId: record.documentId,
       blockId: record.blockId,
       createdAt: record.createdAt || now.toISOString(),
       displayTime: record.displayTime || now.toTimeString().slice(0, 5),
@@ -389,6 +419,16 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
     showMessage("记账已写入，属性写入失败", 3000, "error");
     return undefined;
   }
+}
+
+async function getBookkeepingTargetDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
+  if (settingConf.bookkeepingStorageMode === "central") {
+    return getCentralBookkeepingDocumentId(record, settingConf);
+  }
+  if (settingConf.bookkeepingStorageMode === "date") {
+    return getDailyBookkeepingDocumentId(record, settingConf);
+  }
+  return "";
 }
 
 async function getCentralBookkeepingDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
@@ -452,14 +492,16 @@ function formatGoDateLayout(date: Date, layout: string): string {
   const pad = (num: number) => String(num).padStart(2, "0");
   const tokenMap: Record<string, string> = {
     "2006": String(date.getFullYear()),
+    "1": String(date.getMonth() + 1),
     "01": pad(date.getMonth() + 1),
+    "2": String(date.getDate()),
     "02": pad(date.getDate()),
     "15": pad(date.getHours()),
     "04": pad(date.getMinutes()),
     "05": pad(date.getSeconds()),
   };
 
-  return layout.replace(/2006|01|02|15|04|05/g, (token) => tokenMap[token]);
+  return layout.replace(/2006|01|02|15|04|05|1|2/g, (token) => tokenMap[token]);
 }
 
 function recordToMarkdown(record: BookkeepingRecord): string {

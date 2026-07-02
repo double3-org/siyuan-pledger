@@ -69,4 +69,6 @@
 
 封面图使用了 [阿里巴巴普惠体 3.0 字体](https://www.alibabafonts.com/#/font)
 
+项目中的 AGENTS.md 是基于 [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md) 修改后的版本
+
 [查看全部鸣谢](https://github.com/double3-org/siyuan-pledger/blob/main/THANKS.md)
