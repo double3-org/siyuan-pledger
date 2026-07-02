@@ -243,7 +243,7 @@ export async function setBlockAttrs(
 /**
  * 通过块自定义属性读取记账记录 /api/query/sql
  */
-export async function getBookkeepingRecordsByPledge(storageMode?: string): Promise<(BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string })[]> {
+export async function getBookkeepingRecordsByPledge(storageMode?: string): Promise<(BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[]> {
   const sql = storageMode
     ? `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`
     : "SELECT block_id,value FROM attributes WHERE name = 'custom-pledge'";
@@ -253,7 +253,7 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
     return [];
   }
 
-  const records: (BookkeepingRecord & { blockId?: string; displayTime?: string; createdAt?: string })[] = [];
+  const records: (BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[] = [];
   for (const item of resp.data) {
     try {
       const data = JSON.parse(item.value);
@@ -266,6 +266,7 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
         amount: Number(data.amount) || 0,
         remark: data.remark || "",
         blockId: data.blockId || item.block_id,
+        ...(data.documentId ? { documentId: data.documentId } : {}),
         ...(data.displayTime ? { displayTime: data.displayTime } : {}),
         ...(data.createdAt ? { createdAt: data.createdAt } : {}),
       });

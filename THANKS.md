@@ -51,9 +51,13 @@
    [去看看](https://openai.com/codex/)  
   PS：本项目消耗9000万token  
 
-- **Cent**
+- **Cent**  
   一个完全免费、开源的多人协作记账 Web App
    [去看看](https://github.com/glink25/Cent) 
+
+-- **andrej-karpathy-skills**  
+  一个单一的 CLAUDE.md 文件，用于改善 Claude Code 的行为
+   [去看看](https://github.com/multica-ai/andrej-karpathy-skills)  
 
 - **字体与图片**  
   封面图使用了[Craig Rowtham](https://www.pexels.com/zh-cn/@craig-rowtham-2151756141/)的图片
