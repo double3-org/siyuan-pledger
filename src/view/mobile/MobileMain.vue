@@ -208,6 +208,7 @@ import {
   createDocWithMdByHPath,
   deleteBlock,
   getBookkeepingRecordsByPledge,
+  getCurrentDateTime,
   getFileTreeById,
   getIDsByHPath,
   getLedgerListByYearDocId,
@@ -266,6 +267,7 @@ const totalVisible = ref(true);
 
 const bookkeepingRecords = ref<TimelineRecord[]>([]);
 const selectedBookkeepingMonth = ref(formatMonth(new Date()));
+const currentSystemDate = ref("");
 const bookkeepingTrendChartRef = ref<HTMLDivElement | null>(null);
 type EChartsInstance = ReturnType<typeof echarts.init>;
 let bookkeepingTrendChart: EChartsInstance | null = null;
@@ -290,7 +292,7 @@ const previousMonthRecords = computed(() => {
   const range = previousBookkeepingMonthRange.value;
   return bookkeepingRecords.value.filter(record => record.date >= range.start && record.date <= range.end);
 });
-const dailyRecordDate = computed(() => formatDate(new Date()));
+const dailyRecordDate = computed(() => currentSystemDate.value);
 const todayDateText = computed(() => dailyRecordDate.value);
 const todayBookkeepingRecords = computed(() => {
   return bookkeepingRecords.value
@@ -383,9 +385,11 @@ const categoryDonutBackground = computed(() => {
   return `conic-gradient(${segments.join(", ")})`;
 });
 
-onMounted(() => {
-  initAssetData();
-  initBookkeepingRecords();
+onMounted(async () => {
+  currentSystemDate.value = (await getCurrentDateTime()).date;
+  selectedBookkeepingMonth.value = currentSystemDate.value.slice(0, 7);
+  await initAssetData();
+  await initBookkeepingRecords();
   window.addEventListener("resize", resizeBookkeepingTrendChart);
 });
 
@@ -405,7 +409,7 @@ watch([activePage, bookkeepingTrendData, hasBookkeepingMonthData], async () => {
 
 // 初始化资产数据，移动端先展示最近一年走势和最新一期资产。
 async function initAssetData() {
-  const today = new Date();
+  const today = (await getCurrentDateTime()).dateObj;
   const rangeStartDate = formatDate(addDays(today, -364));
   const rangeEndDate = formatDate(today);
   const accountList = await getAssetLedgerListByDateRange(rangeStartDate, rangeEndDate);
@@ -596,7 +600,7 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
   }
 
   const blockMarkdown = recordToMarkdown(record);
-  const now = new Date();
+  const now = await getCurrentDateTime();
   if (record.blockId) {
     const targetDocumentId = record.documentId ? await getBookkeepingTargetDocumentId(record, settingConf) : "";
     if (targetDocumentId && record.documentId && targetDocumentId !== record.documentId) {
@@ -607,8 +611,8 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
         storageMode: settingConf.bookkeepingStorageMode,
         documentId: targetDocumentId,
         blockId,
-        createdAt: record.createdAt || now.toISOString(),
-        displayTime: record.displayTime || now.toTimeString().slice(0, 5),
+        createdAt: record.createdAt || now.iso,
+        displayTime: record.displayTime || now.time,
       };
       const isAttrSaved = await setBlockAttrs(blockId, {
         "custom-pledge": JSON.stringify(pledgeData),
@@ -632,8 +636,8 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
       storageMode: settingConf.bookkeepingStorageMode,
       documentId: record.documentId,
       blockId: record.blockId,
-      createdAt: record.createdAt || now.toISOString(),
-      displayTime: record.displayTime || now.toTimeString().slice(0, 5),
+      createdAt: record.createdAt || now.iso,
+      displayTime: record.displayTime || now.time,
     };
     const isAttrSaved = await setBlockAttrs(record.blockId, {
       "custom-pledge": JSON.stringify(pledgeData),
@@ -668,8 +672,8 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
     storageMode: settingConf.bookkeepingStorageMode,
     documentId: targetDocumentId,
     blockId,
-    createdAt: now.toISOString(),
-    displayTime: now.toTimeString().slice(0, 5),
+    createdAt: now.iso,
+    displayTime: now.time,
   };
   const isAttrSaved = await setBlockAttrs(blockId, {
     "custom-pledge": JSON.stringify(pledgeData),
@@ -941,13 +945,17 @@ function getMonthRange(month: string) {
   const date = parseMonth(month);
   const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
   const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const today = new Date();
+  const today = getCurrentSystemDateObj();
   const isCurrentMonth = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth();
   return {
     start: formatDate(startDate),
     end: formatDate(endDate),
     dayCount: isCurrentMonth ? today.getDate() : endDate.getDate(),
   };
+}
+
+function getCurrentSystemDateObj(): Date {
+  return currentSystemDate.value ? parseDate(currentSystemDate.value) : new Date();
 }
 
 function renderDailyNotePath(template: string, date: string): string {

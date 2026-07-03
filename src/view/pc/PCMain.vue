@@ -221,7 +221,7 @@ import * as echarts from 'echarts/core';
 import { GraphicComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import { LineChart, PieChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
-import { getBookkeepingRecordsByPledge, getYearDocs, getLedgerListByYearDocId } from '@/api/siyuanApi.js';
+import { getBookkeepingRecordsByPledge, getCurrentDateTime, getYearDocs, getLedgerListByYearDocId } from '@/api/siyuanApi.js';
 import { showMessage } from 'siyuan';
 
 import Latest from '@/components/Latest.vue';
@@ -259,11 +259,12 @@ const bookkeepingRange = ref<BookkeepingRangeMode>("lastMonth");
 const bookkeepingStartDate = ref("");
 const bookkeepingEndDate = ref("");
 const bookkeepingTrendMode = ref<BookkeepingTrendMode>("day");
+const currentSystemDate = ref("");
 const bookkeepingAppliedRange = ref<BookkeepingAppliedRange>(createLastMonthBookkeepingRange());
 const bookkeepingRecords = ref<BookkeepingRecord[]>([]);
 const bookkeepingMonthlyBudget = computed(() => parseBookkeepingAmount(props.settingConfData.bookkeepingMonthlyBudget, 3000));
 const bookkeepingMonthStats = computed(() => {
-  const currentMonth = getBookkeepingMonthRange(new Date());
+  const currentMonth = getBookkeepingMonthRange(getCurrentSystemDateObj());
   const previousMonth = getBookkeepingMonthRange(new Date(currentMonth.startDate.getFullYear(), currentMonth.startDate.getMonth() - 1, 1));
   const current = calculateBookkeepingMonthStats(currentMonth.start, currentMonth.end, currentMonth.dayCount);
   const previous = calculateBookkeepingMonthStats(previousMonth.start, previousMonth.end, previousMonth.dayCount);
@@ -487,7 +488,9 @@ watch([bookkeepingAppliedRange, bookkeepingTrendMode, bookkeepingRecords], async
   queueRenderBookkeepingCharts();
 });
 
-onMounted(() => {
+onMounted(async () => {
+  currentSystemDate.value = (await getCurrentDateTime()).date;
+  bookkeepingAppliedRange.value = createLastMonthBookkeepingRange();
   window.addEventListener("resize", queueRenderBookkeepingCharts);
   if (typeof ResizeObserver !== "undefined") {
     bookkeepingChartResizeObserver = new ResizeObserver(queueRenderBookkeepingCharts);
@@ -569,7 +572,7 @@ function calculateBookkeepingMonthStats(startDate: string, endDate: string, dayC
 function getBookkeepingMonthRange(date: Date) {
   const startDate = new Date(date.getFullYear(), date.getMonth(), 1);
   const endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-  const today = new Date();
+  const today = getCurrentSystemDateObj();
   const isCurrentMonth = date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth();
 
   return {
@@ -580,13 +583,17 @@ function getBookkeepingMonthRange(date: Date) {
   };
 }
 
+function getCurrentSystemDateObj(): Date {
+  return currentSystemDate.value ? parseBookkeepingDate(currentSystemDate.value) : new Date();
+}
+
 function formatBookkeepingDate(date: Date): string {
   const pad = (num: number) => String(num).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 function createLastMonthBookkeepingRange(): BookkeepingAppliedRange {
-  const today = new Date();
+  const today = getCurrentSystemDateObj();
   return {
     mode: "lastMonth",
     start: formatBookkeepingDate(addBookkeepingDays(today, -30)),
@@ -936,7 +943,7 @@ initData()
 
 // 初始化数据
 async function initData() {
-  const today = new Date();
+  const today = (await getCurrentDateTime()).dateObj;
   const rangeStartDate = formatBookkeepingDate(addBookkeepingDays(today, -364));
   const rangeEndDate = formatBookkeepingDate(today);
   const accountList = await getAssetLedgerListByDateRange(rangeStartDate, rangeEndDate);

@@ -98,6 +98,7 @@ import {
   createDocWithMdByHPath,
   deleteBlock,
   getBookkeepingRecordsByPledge,
+  getCurrentDateTime,
   getFileTreeById,
   getIDsByHPath,
   getNotebookConf,
@@ -128,9 +129,11 @@ type TimelineRecord = BookkeepingRecord & {
 const billPageSize = 5;
 const visibleDayCount = ref(billPageSize);
 const billRecords = ref<TimelineRecord[]>([]);
+const currentDateText = ref("");
 
-onMounted(() => {
-  initBookkeepingRecords();
+onMounted(async () => {
+  currentDateText.value = (await getCurrentDateTime()).date;
+  await initBookkeepingRecords();
 });
 
 const billGroups = computed(() => {
@@ -149,7 +152,7 @@ const billGroups = computed(() => {
 const visibleBillGroups = computed(() => billGroups.value.slice(0, visibleDayCount.value));
 const hasMoreBills = computed(() => visibleDayCount.value < billGroups.value.length);
 const visibleBillRecords = computed(() => visibleBillGroups.value.flatMap(group => group.records));
-const todayDateText = computed(() => formatDateValue(new Date()));
+const todayDateText = computed(() => currentDateText.value);
 const recentAmountText = computed(() => {
   const total = billRecords.value.filter(record => record.date === todayDateText.value && record.type === "expense").reduce((sum, record) => {
     return sum + record.amount;
@@ -295,8 +298,10 @@ function formatDateValue(date: Date): string {
 
 function formatDateLabel(date: string): string {
   const dateObj = new Date(`${date}T00:00:00`);
-  const today = new Date();
-  const yesterday = new Date();
+  if (!currentDateText.value) return date.slice(5);
+
+  const today = new Date(`${currentDateText.value}T00:00:00`);
+  const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   const monthDay = date.slice(5);
 
@@ -329,7 +334,7 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
 
   const blockMarkdown = recordToMarkdown(record);
 
-  const now = new Date();
+  const now = await getCurrentDateTime();
   if (record.blockId) {
     const targetDocumentId = record.documentId ? await getBookkeepingTargetDocumentId(record, settingConf) : "";
     if (targetDocumentId && record.documentId && targetDocumentId !== record.documentId) {
@@ -340,8 +345,8 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
         storageMode: settingConf.bookkeepingStorageMode,
         documentId: targetDocumentId,
         blockId,
-        createdAt: record.createdAt || now.toISOString(),
-        displayTime: record.displayTime || now.toTimeString().slice(0, 5),
+        createdAt: record.createdAt || now.iso,
+        displayTime: record.displayTime || now.time,
       };
       const isAttrSaved = await setBlockAttrs(blockId, {
         "custom-pledge": JSON.stringify(pledgeData),
@@ -365,8 +370,8 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
       storageMode: settingConf.bookkeepingStorageMode,
       documentId: record.documentId,
       blockId: record.blockId,
-      createdAt: record.createdAt || now.toISOString(),
-      displayTime: record.displayTime || now.toTimeString().slice(0, 5),
+      createdAt: record.createdAt || now.iso,
+      displayTime: record.displayTime || now.time,
     };
     const isAttrSaved = await setBlockAttrs(record.blockId, {
       "custom-pledge": JSON.stringify(pledgeData),
@@ -404,8 +409,8 @@ async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: str
     storageMode: settingConf.bookkeepingStorageMode,
     documentId: targetDocumentId,
     blockId,
-    createdAt: now.toISOString(),
-    displayTime: now.toTimeString().slice(0, 5),
+    createdAt: now.iso,
+    displayTime: now.time,
   };
   const attrs = {
     "custom-pledge": JSON.stringify(pledgeData),
