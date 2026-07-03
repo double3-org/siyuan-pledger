@@ -282,11 +282,42 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
  * 获取当前系统时间 /api/system/currentTime
  */
 export async function getCurrentTime() {
+  return (await getCurrentDateTime()).date;
+}
+
+/**
+ * 获取当前系统日期时间 /api/system/currentTime
+ */
+export async function getCurrentDateTime(): Promise<{ date: string; time: string; iso: string; dateObj: Date }> {
   const resp = await fetchSyncPost("/api/system/currentTime");
-  if (resp.code === 0) {
-    return new Date(resp.data).toISOString().split("T")[0];
+  const dateObj = resp.code === 0 ? parseSiyuanCurrentTime(resp.data) : new Date();
+  return {
+    date: formatLocalDate(dateObj),
+    time: formatLocalTime(dateObj),
+    iso: dateObj.toISOString(),
+    dateObj,
+  };
+}
+
+function parseSiyuanCurrentTime(value: unknown): Date {
+  const timestamp = Number(value);
+  if (Number.isFinite(timestamp)) {
+    const normalizedTimestamp = timestamp < 100000000000 ? timestamp * 1000 : timestamp;
+    return new Date(normalizedTimestamp);
   }
-  return new Date().toISOString().split("T")[0];
+
+  const dateObj = new Date(String(value));
+  return Number.isNaN(dateObj.getTime()) ? new Date() : dateObj;
+}
+
+function formatLocalDate(date: Date): string {
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function formatLocalTime(date: Date): string {
+  const pad = (num: number) => String(num).padStart(2, "0");
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 // 根据文档编号获取全年数据
