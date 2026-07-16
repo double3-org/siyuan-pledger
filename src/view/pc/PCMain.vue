@@ -232,6 +232,7 @@ import Compare from '@/components/bi/Compare.vue';
 import Plan from '@/components/bi/Plan.vue';
 import Table from '@/components/bi/Table.vue';
 import DatePicker from '@/components/custom/DatePicker.vue';
+import { getPluginThemeColors, observeThemeChange } from '@/utils/theme-utils';
 
 echarts.use([
   GraphicComponent,
@@ -451,6 +452,7 @@ let bookkeepingTrendChart: EChartsInstance | null = null;
 let bookkeepingCategoryChart: EChartsInstance | null = null;
 let bookkeepingChartResizeObserver: ResizeObserver | null = null;
 let bookkeepingRenderFrame = 0;
+let stopObservingTheme: (() => void) | null = null;
 let observedBookkeepingTrendEl: HTMLElement | null = null;
 let observedBookkeepingCategoryEl: HTMLElement | null = null;
 
@@ -495,6 +497,7 @@ onMounted(async () => {
   if (typeof ResizeObserver !== "undefined") {
     bookkeepingChartResizeObserver = new ResizeObserver(queueRenderBookkeepingCharts);
   }
+  stopObservingTheme = observeThemeChange(queueRenderBookkeepingCharts);
   if (activePage.value === "bookkeeping") {
     initBookkeepingSummaryData();
   }
@@ -502,6 +505,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", queueRenderBookkeepingCharts);
+  stopObservingTheme?.();
   cancelBookkeepingRender();
   disposeBookkeepingCharts();
 });
@@ -742,11 +746,15 @@ function renderBookkeepingTrendChart() {
 
   const trendData = bookkeepingTrendData.value;
   const isCompact = bookkeepingTrendChartRef.value.clientWidth < 520;
+  const themeColors = getPluginThemeColors();
 
   bookkeepingTrendChart.setOption({
     color: ["#f45b5b", "#31b875", "#4f7df3"],
     tooltip: {
       trigger: "axis",
+      backgroundColor: themeColors.background,
+      borderColor: themeColors.border,
+      textStyle: { color: themeColors.text },
     },
     legend: {
       top: 16,
@@ -759,7 +767,7 @@ function renderBookkeepingTrendChart() {
         结余: false,
       },
       textStyle: {
-        color: "#64748b",
+        color: themeColors.textSecondary,
       },
     },
     grid: {
@@ -772,23 +780,23 @@ function renderBookkeepingTrendChart() {
       type: "category",
       boundaryGap: false,
       data: trendData.labels,
-      axisLine: { lineStyle: { color: "#e5e7eb" } },
+      axisLine: { lineStyle: { color: themeColors.border } },
       axisTick: { show: false },
       axisLabel: {
-        color: "#64748b",
+        color: themeColors.textSecondary,
         interval: getBookkeepingTrendAxisInterval(trendData.labels.length, isCompact),
       },
     },
     yAxis: {
       type: "value",
       axisLabel: {
-        color: "#64748b",
+        color: themeColors.textSecondary,
         margin: 6,
         formatter: (value: number) => Math.abs(value) >= 1000 ? `${value / 1000}k` : `${value}`,
       },
       splitLine: {
         lineStyle: {
-          color: "#e5e7eb",
+          color: themeColors.border,
           type: "dashed",
         },
       },
@@ -829,6 +837,7 @@ function renderBookkeepingCategoryChart() {
     bookkeepingCategoryChart = echarts.init(bookkeepingCategoryChartRef.value);
   }
   const categoryStats = bookkeepingCategoryStats.value;
+  const themeColors = getPluginThemeColors();
 
   const categoryLegend = {
     orient: "vertical",
@@ -844,17 +853,17 @@ function renderBookkeepingCategoryChart() {
       return `{name|${item.name}}{percent|${item.percent}}`;
     },
     textStyle: {
-      color: "#64748b",
+      color: themeColors.textSecondary,
       rich: {
         name: {
           width: 42,
-          color: "#111827",
+          color: themeColors.text,
           fontWeight: 600,
         },
         percent: {
           width: 58,
           align: "right",
-          color: "#111827",
+          color: themeColors.text,
         },
       },
     },
@@ -864,6 +873,9 @@ function renderBookkeepingCategoryChart() {
     color: categoryStats.map(item => item.color),
     tooltip: {
       trigger: "item",
+      backgroundColor: themeColors.background,
+      borderColor: themeColors.border,
+      textStyle: { color: themeColors.text },
     },
     legend: categoryLegend,
     graphic: [],
@@ -1050,7 +1062,8 @@ const onTabChange = (e: any) => {
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background-color: #fff;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-background);
 }
 
 .pl-pc-main-left {
@@ -1064,19 +1077,20 @@ const onTabChange = (e: any) => {
 .pl-pc-search {
   display: flex;
   padding-left: 1rem;
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--pl-color-border);
 }
 
 .pl-button.pl-pc-search-button {
-  background-color: #1447e6;
+  background-color: var(--pl-color-primary);
   border: 0;
-  color: #fff;
+  color: var(--b3-theme-on-primary, #fff);
   margin-left: 1rem;
 }
 
 .pl-button.pl-pc-search-button:hover {
-  background-color: #0f3ac7;
-  border-color: #0f3ac7;
+  background-color: var(--pl-color-primary);
+  border-color: var(--pl-color-primary);
+  filter: brightness(0.9);
 }
 
 .pl-pc-chart {
@@ -1092,8 +1106,8 @@ const onTabChange = (e: any) => {
 }
 
 .pl-pc-bi-badge {
-  background-color: #e8e8e8;
-  color: #000;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface);
   width: fit-content;
   justify-content: center;
   align-items: center;
@@ -1113,7 +1127,7 @@ const onTabChange = (e: any) => {
   height: 20rem;
   overflow: auto;
   position: relative;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-empty {
@@ -1123,8 +1137,8 @@ const onTabChange = (e: any) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
-  background: #fff;
+  color: var(--pl-color-empty);
+  background: var(--pl-color-background);
 }
 
 .pl-empty svg {
@@ -1142,13 +1156,13 @@ const onTabChange = (e: any) => {
 .pl-bookkeeping-detail-table td {
   white-space: nowrap;
   text-align: right;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--pl-color-border);
 }
 
 .pl-bookkeeping-detail-table th {
   font-weight: 600;
   text-align: center;
-  background: #fff;
+  background: var(--pl-color-background);
   padding: 0.5rem;
 }
 
@@ -1156,7 +1170,7 @@ const onTabChange = (e: any) => {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-bookkeeping-detail-table tfoot td,
@@ -1164,9 +1178,9 @@ const onTabChange = (e: any) => {
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: #fff;
+  background: var(--pl-color-background);
   font-weight: 600;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--pl-color-border);
 }
 
 .pl-bookkeeping-detail-left {
@@ -1177,12 +1191,15 @@ const onTabChange = (e: any) => {
   left: 0;
   z-index: 1;
   text-align: left;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
-.pl-bookkeeping-detail-top-left {
+.pl-bookkeeping-detail-table thead th.pl-bookkeeping-detail-top-left {
+  position: sticky;
   top: 0;
-  z-index: 2;
+  left: 0;
+  z-index: 3;
+  background: var(--pl-color-background);
 }
 
 .pl-bookkeeping-detail-bottom-left {
@@ -1192,7 +1209,7 @@ const onTabChange = (e: any) => {
 
 .pl-bookkeeping-detail-table tr.bg-gray-100 td,
 .pl-bookkeeping-detail-table tr.bg-gray-100 th {
-  background-color: #f5f5f5;
+  background-color: var(--pl-color-surface-light);
 }
 
 .pl-bookkeeping-detail-table td {
@@ -1201,7 +1218,7 @@ const onTabChange = (e: any) => {
 }
 
 .pl-bookkeeping-detail-table tfoot td {
-  color: #111827;
+  color: var(--pl-color-text);
 }
 
 .pl-bookkeeping-detail-table thead span {
@@ -1234,17 +1251,17 @@ const onTabChange = (e: any) => {
   height: 1.9rem;
   min-width: 5.5rem;
   padding: 0 0.55rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--pl-color-border);
   border-radius: .4rem;
-  background: #fff;
-  color: #111827;
+  background: var(--pl-color-surface);
+  color: var(--pl-color-text);
   font-size: .85rem;
   font-weight: 600;
   outline: none;
 }
 
 .pl-bookkeeping-trend-mode:focus {
-  border-color: #9ca3af;
+  border-color: var(--pl-color-text-secondary);
 }
 
 .pl-bookkeeping-trend-chart {
@@ -1273,30 +1290,30 @@ const onTabChange = (e: any) => {
 
 .pl-bookkeeping-stat-card {
   padding: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--pl-color-border);
   border-radius: 0.5rem;
-  background: linear-gradient(135deg, #fff 0%, var(--stat-bg-color) 100%);
-  box-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.05);
+  background: linear-gradient(135deg, var(--pl-color-background) 0%, var(--stat-bg-color) 100%);
+  box-shadow: var(--pl-shadow);
 }
 
 .pl-bookkeeping-stat-card.income {
-  --stat-bg-color: #eff6ff;
-  --stat-title-color: #2563eb;
+  --stat-bg-color: color-mix(in srgb, var(--pl-color-primary) 10%, var(--pl-color-background));
+  --stat-title-color: var(--pl-color-primary);
 }
 
 .pl-bookkeeping-stat-card.expense {
-  --stat-bg-color: #fff1f2;
-  --stat-title-color: #dc2626;
+  --stat-bg-color: color-mix(in srgb, var(--pl-color-error) 10%, var(--pl-color-background));
+  --stat-title-color: var(--pl-color-error);
 }
 
 .pl-bookkeeping-stat-card.budget {
-  --stat-bg-color: #f0f9ff;
-  --stat-title-color: #0f172a;
+  --stat-bg-color: color-mix(in srgb, var(--pl-color-primary) 7%, var(--pl-color-background));
+  --stat-title-color: var(--pl-color-text);
 }
 
 .pl-bookkeeping-stat-card.average {
-  --stat-bg-color: #fdf2f8;
-  --stat-title-color: #dc2626;
+  --stat-bg-color: color-mix(in srgb, var(--pl-color-error) 7%, var(--pl-color-background));
+  --stat-title-color: var(--pl-color-error);
 }
 
 .pl-bookkeeping-stat-title {
@@ -1307,7 +1324,7 @@ const onTabChange = (e: any) => {
 
 .pl-bookkeeping-stat-value {
   margin-top: 0.3rem;
-  color: #111827;
+  color: var(--pl-color-text);
   font-size: 1.65rem;
   font-weight: 700;
   line-height: 1.1;
@@ -1318,19 +1335,19 @@ const onTabChange = (e: any) => {
   align-items: center;
   gap: 0.4rem;
   margin-top: 0.3rem;
-  color: #6b7280;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
 .pl-bookkeeping-stat-footer .up {
-  color: #16a34a;
+  color: var(--pl-color-success);
 }
 
 .pl-bookkeeping-stat-footer .down {
-  color: #ef4444;
+  color: var(--pl-color-error);
 }
 
 .pl-bookkeeping-stat-footer .neutral {
-  color: #2563eb;
+  color: var(--pl-color-primary);
 }
 </style>

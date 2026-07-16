@@ -23,7 +23,7 @@ const activeBlockCount = computed(() => {
 
 <style scoped lang="css">
 .active {
-  background-color: oklch(70.7% 0.022 261.325)
+  background-color: var(--pl-color-primary);
 }
 
 .pl-plan-main {
@@ -36,7 +36,7 @@ const activeBlockCount = computed(() => {
 .pl-plan-block {
   width: 0.65rem;
   height: 0.65rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--pl-color-border);
   border-radius: 0.25rem;
 }
 </style>

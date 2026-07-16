@@ -42,7 +42,7 @@ const props = defineProps<{
   margin-top: 0.75rem;
   margin-bottom: 0.5rem;
   font-size: 0.75rem;
-  color: #666;
+  color: var(--pl-color-text-secondary);
 }
 
 .pl-compare-value {
@@ -50,10 +50,10 @@ const props = defineProps<{
 }
 
 .pl-compare-value.lime-600 {
-  color: #40c571;
+  color: var(--pl-color-success);
 }
 
 .pl-compare-value.red-700 {
-  color: #e23955;
+  color: var(--pl-color-error);
 }
 </style>

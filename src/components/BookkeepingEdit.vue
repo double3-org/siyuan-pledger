@@ -399,8 +399,8 @@ function formatAmount(value: number): string {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 0.8rem;
   padding: 0.6rem 1.2rem;
-  color: #111827;
-  background-color: #f9fafb;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-background);
   height: calc(100% - 1.2rem);
   border-radius: 0 0 14px 14px;
 }
@@ -417,7 +417,7 @@ function formatAmount(value: number): string {
   height: 33px;
   overflow: hidden;
   padding: 0.25rem;
-  background-color: #f3f4f6;
+  background-color: var(--pl-color-surface);
   border-radius: 10px;
 }
 
@@ -430,7 +430,7 @@ function formatAmount(value: number): string {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #374151;
+  color: var(--pl-color-text-secondary);
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
@@ -438,13 +438,13 @@ function formatAmount(value: number): string {
 }
 
 .pl-bookkeeping-type-tabs label:has(input[value="expense"]:checked) {
-  color: #fff;
-  background-color: #ef4444;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-error);
 }
 
 .pl-bookkeeping-type-tabs label:has(input[value="income"]:checked) {
-  color: #fff;
-  background-color: #22c55e;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-success);
 }
 
 .pl-bookkeeping-amount {
@@ -454,9 +454,9 @@ function formatAmount(value: number): string {
   height: 50px;
   min-width: 0;
   padding: 0 1.25rem;
-  color: #111827;
-  background-color: #f7f8fa;
-  border: 1px solid #e5e7eb;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface-light);
+  border: 1px solid var(--pl-color-border);
   border-radius: 12px;
   font-size: 2rem;
   font-weight: 600;
@@ -501,8 +501,8 @@ function formatAmount(value: number): string {
 .pl-bookkeeping-parent-tag {
   flex-shrink: 0;
   padding: 0 12px;
-  color: #4f46e5;
-  background-color: #eef2ff;
+  color: var(--pl-color-primary);
+  background-color: var(--pl-color-primary-light);
   font-size: 0.875rem;
 }
 
@@ -513,25 +513,25 @@ function formatAmount(value: number): string {
 }
 
 .pl-bookkeeping-parent-tag.active {
-  color: #fff;
-  background-color: #2563eb;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-primary);
 }
 
 .pl-bookkeeping-child-tag {
   height: 33px;
   padding: 0 20px;
-  color: #374151;
-  background-color: #f3f4f6;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface);
   font-size: 0.875rem;
 }
 
 .pl-bookkeeping-child-tag:hover {
-  background-color: #dbeafe;
+  background-color: var(--pl-color-primary-light);
 }
 
 .pl-bookkeeping-child-tag.active {
-  color: #fff;
-  background-color: #2563eb;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-primary);
 }
 
 .pl-bookkeeping-action-area {
@@ -545,8 +545,8 @@ function formatAmount(value: number): string {
 .pl-bookkeeping-calculator {
   display: flex;
   padding: 1rem;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
+  background-color: var(--pl-color-surface);
+  border: 1px solid var(--pl-color-border);
   border-radius: 12px;
   min-height: 0;
 }
@@ -562,7 +562,7 @@ function formatAmount(value: number): string {
 
 .pl-bookkeeping-keypad button {
   min-height: 0;
-  color: #fff;
+  color: var(--b3-theme-on-primary, #fff);
   background-color: #2b2b2b;
   border: 0;
   border-radius: 12px;
@@ -595,12 +595,12 @@ function formatAmount(value: number): string {
 }
 
 .pl-bookkeeping-keypad button.clear.danger {
-  background-color: #ef4444;
+  background-color: var(--pl-color-error);
 }
 
 .pl-bookkeeping-keypad button.equal {
   grid-column: span 2 / span 2;
-  background-color: #2563eb;
+  background-color: var(--pl-color-primary);
   font-size: 32px;
 }
 
@@ -619,9 +619,9 @@ function formatAmount(value: number): string {
 .pl-bookkeeping-remark {
   min-width: 0;
   height: 36px;
-  color: #6b7280;
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
+  color: var(--pl-color-text-secondary);
+  background-color: var(--pl-color-surface);
+  border: 1px solid var(--pl-color-border);
   border-radius: 10px;
   outline: none;
   font-size: 0.875rem;
@@ -641,8 +641,8 @@ function formatAmount(value: number): string {
   width: 100%;
   height: 100%;
   min-height: 72px;
-  color: #fff;
-  background-color: #16a34a;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-success);
   border: 0;
   border-radius: 12px;
   cursor: pointer;
@@ -770,7 +770,7 @@ function formatAmount(value: number): string {
   }
 
   .pl-bookkeeping-keypad button.save {
-    background-color: #16a34a;
+    background-color: var(--pl-color-success);
     font-size: 0.95rem;
   }
 

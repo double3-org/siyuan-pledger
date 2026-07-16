@@ -14,7 +14,9 @@
 
 <style scoped lang="css">
 .pl-bi-main {
-  border: 1px solid #e6e6e7;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-background);
+  border: 1px solid var(--pl-color-border);
   border-radius: .5rem;
   padding: 1rem 1rem 0.5rem;
 }

@@ -228,6 +228,7 @@ import IconDisplay from "@/components/custom/IconDisplay.vue";
 import LedgerEdit from '@/components/LedgerEdit.vue';
 import Line from '@/components/bi/Line.vue';
 import Plan from '@/components/bi/Plan.vue';
+import { getPluginThemeColors, observeThemeChange } from '@/utils/theme-utils';
 
 echarts.use([
   GridComponent,
@@ -271,6 +272,7 @@ const currentSystemDate = ref("");
 const bookkeepingTrendChartRef = ref<HTMLDivElement | null>(null);
 type EChartsInstance = ReturnType<typeof echarts.init>;
 let bookkeepingTrendChart: EChartsInstance | null = null;
+let stopObservingTheme: (() => void) | null = null;
 
 const visibleLedgerList = computed(() => {
   return showAllAccounts.value ? latestLedgerList.value : latestLedgerList.value.slice(0, accountLimit);
@@ -371,7 +373,7 @@ const bookkeepingCategoryStats = computed(() => {
 });
 const categoryDonutBackground = computed(() => {
   if (bookkeepingCategoryStats.value.length === 0) {
-    return "conic-gradient(#e5e7eb 0deg 360deg)";
+    return "conic-gradient(var(--pl-color-border) 0deg 360deg)";
   }
 
   const total = bookkeepingCategoryStats.value.reduce((sum, item) => sum + item.amount, 0);
@@ -390,11 +392,13 @@ onMounted(async () => {
   selectedBookkeepingMonth.value = currentSystemDate.value.slice(0, 7);
   await initAssetData();
   await initBookkeepingRecords();
+  stopObservingTheme = observeThemeChange(renderBookkeepingTrendChart);
   window.addEventListener("resize", resizeBookkeepingTrendChart);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", resizeBookkeepingTrendChart);
+  stopObservingTheme?.();
   disposeBookkeepingTrendChart();
 });
 
@@ -835,10 +839,14 @@ function renderBookkeepingTrendChart(): void {
 
   const data = bookkeepingTrendData.value;
   const isCompact = bookkeepingTrendChartRef.value.clientWidth < 520;
+  const themeColors = getPluginThemeColors();
   bookkeepingTrendChart.setOption({
     color: ["#f45b5b", "#31b875", "#4f7df3"],
     tooltip: {
       trigger: "axis",
+      backgroundColor: themeColors.background,
+      borderColor: themeColors.border,
+      textStyle: { color: themeColors.text },
     },
     legend: {
       top: 16,
@@ -851,7 +859,7 @@ function renderBookkeepingTrendChart(): void {
         结余: false,
       },
       textStyle: {
-        color: "#64748b",
+        color: themeColors.textSecondary,
       },
     },
     grid: {
@@ -864,23 +872,23 @@ function renderBookkeepingTrendChart(): void {
       type: "category",
       boundaryGap: false,
       data: data.labels,
-      axisLine: { lineStyle: { color: "#e5e7eb" } },
+      axisLine: { lineStyle: { color: themeColors.border } },
       axisTick: { show: false },
       axisLabel: {
-        color: "#64748b",
+        color: themeColors.textSecondary,
         interval: getBookkeepingAxisInterval(data.labels.length, isCompact),
       },
     },
     yAxis: {
       type: "value",
       axisLabel: {
-        color: "#64748b",
+        color: themeColors.textSecondary,
         margin: 6,
         formatter: (value: number) => Math.abs(value) >= 1000 ? `${value / 1000}k` : `${value}`,
       },
       splitLine: {
         lineStyle: {
-          color: "#e5e7eb",
+          color: themeColors.border,
           type: "dashed",
         },
       },
@@ -1055,8 +1063,8 @@ function formatDate(date: Date): string {
   height: 100%;
   min-height: 100%;
   position: relative;
-  color: #101828;
-  background-color: #f8fafc;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface-light);
   overflow: hidden;
 }
 
@@ -1084,10 +1092,10 @@ function formatDate(date: Date): string {
   flex: 0 0 auto;
   min-width: 0;
   max-width: 100%;
-  background-color: #fff;
-  border: 1px solid #e6edf5;
+  background-color: var(--pl-color-background);
+  border: 1px solid var(--pl-color-border);
   border-radius: 0.5rem;
-  box-shadow: 0 0.75rem 2rem rgba(15, 23, 42, 0.04);
+  box-shadow: var(--pl-shadow);
 }
 
 .pl-mobile-month-picker {
@@ -1100,13 +1108,13 @@ function formatDate(date: Date): string {
 
 .pl-mobile-month-picker strong {
   text-align: center;
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 1.05rem;
 }
 
 .pl-mobile-month-picker button {
   height: 2.5rem;
-  color: #475569;
+  color: var(--pl-color-text-secondary);
   background: transparent;
   border: 0;
   font-size: 1.5rem;
@@ -1121,19 +1129,19 @@ function formatDate(date: Date): string {
 .pl-mobile-summary-card {
   min-width: 0;
   padding: 0.9rem;
-  background: linear-gradient(135deg, #fff 0%, var(--summary-bg-color) 100%);
+  background: linear-gradient(135deg, var(--pl-color-background) 0%, var(--summary-bg-color) 100%);
 }
 
 .pl-mobile-summary-card.expense,
 .pl-mobile-summary-card.average {
-  --summary-bg-color: #fff1f2;
-  --summary-title-color: #ef4444;
+  --summary-bg-color: color-mix(in srgb, var(--pl-color-error) 10%, var(--pl-color-background));
+  --summary-title-color: var(--pl-color-error);
 }
 
 .pl-mobile-summary-card.income,
 .pl-mobile-summary-card.budget {
-  --summary-bg-color: #eff6ff;
-  --summary-title-color: #2563eb;
+  --summary-bg-color: color-mix(in srgb, var(--pl-color-primary) 10%, var(--pl-color-background));
+  --summary-title-color: var(--pl-color-primary);
 }
 
 .pl-mobile-summary-card span {
@@ -1145,19 +1153,19 @@ function formatDate(date: Date): string {
 .pl-mobile-summary-card strong {
   display: block;
   margin-top: 0.4rem;
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 1.55rem;
   line-height: 1.05;
 }
 
 .pl-mobile-summary-card p {
   margin: 0.45rem 0 0;
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
 .pl-mobile-summary-card b {
-  color: #ef4444;
+  color: var(--pl-color-error);
   font-weight: 700;
 }
 
@@ -1175,14 +1183,14 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-total-header {
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 1rem;
   font-weight: 700;
 }
 
 .pl-mobile-unit {
   margin-left: 0.25rem;
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1190,7 +1198,7 @@ function formatDate(date: Date): string {
   width: 2rem;
   height: 2rem;
   padding: 0;
-  color: #475569;
+  color: var(--pl-color-text-secondary);
   background: transparent;
   border: 0;
 }
@@ -1205,12 +1213,12 @@ function formatDate(date: Date): string {
 
 .pl-mobile-total-body {
   margin-top: 0.9rem;
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-size: 0.95rem;
 }
 
 .pl-mobile-total-body strong {
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 2rem;
   line-height: 1;
   font-weight: 800;
@@ -1239,12 +1247,12 @@ function formatDate(date: Date): string {
   text-align: left;
   background: transparent;
   border: 0;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--pl-color-border);
 }
 
 .pl-mobile-account-row {
-  grid-template-columns: 2.5rem minmax(0, 1fr) 1.5rem;
-  gap: 0.8rem;
+  grid-template-columns: 1.75rem minmax(0, 1fr) 1.5rem;
+  gap: 0.75rem;
   padding: 0.85rem 1rem;
 }
 
@@ -1254,21 +1262,20 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-account-icon {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
-  background-color: #eff6ff;
-  border-radius: 0.5rem;
-  font-size: 1.45rem;
+  color: var(--pl-color-text);
+  background-color: transparent;
+  font-size: 1.5rem;
 }
 
 .pl-mobile-account-icon :deep(svg),
 .pl-mobile-account-icon :deep(.pl-icon-text) {
-  width: 1.45rem;
-  height: 1.45rem;
+  width: 1.75rem;
+  height: 1.75rem;
 }
 
 .pl-mobile-account-list {
@@ -1280,14 +1287,14 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-account-title {
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 1rem;
   font-weight: 700;
 }
 
 .pl-mobile-account-amount {
   margin-top: 0.15rem;
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 1rem;
   font-weight: 800;
 }
@@ -1295,7 +1302,7 @@ function formatDate(date: Date): string {
 .pl-mobile-account-detail {
   margin-top: 0.2rem;
   overflow: hidden;
-  color: #667085;
+  color: var(--pl-color-text-secondary);
   font-size: 0.78rem;
   line-height: 1.45;
   text-overflow: ellipsis;
@@ -1305,7 +1312,7 @@ function formatDate(date: Date): string {
 .pl-mobile-edit-icon {
   width: 1rem;
   height: 1rem;
-  color: #475569;
+  color: var(--pl-color-text-secondary);
   fill: currentColor;
 }
 
@@ -1316,10 +1323,10 @@ function formatDate(date: Date): string {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.9rem;
-  color: #475569;
-  background-color: #fff;
+  color: var(--pl-color-text-secondary);
+  background-color: var(--pl-color-background);
   border: 0;
-  border-top: 1px solid #edf2f7;
+  border-top: 1px solid var(--pl-color-border);
   font-size: 0.95rem;
 }
 
@@ -1329,28 +1336,28 @@ function formatDate(date: Date): string {
 
 .pl-mobile-section-header h3 {
   margin: 0;
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 1rem;
   font-weight: 800;
 }
 
 .pl-mobile-range-tabs {
-  color: #2563eb;
+  color: var(--pl-color-primary);
   font-size: 0.9rem;
   font-weight: 700;
-  border-bottom: 2px solid #2563eb;
+  border-bottom: 2px solid var(--pl-color-primary);
 }
 
 .pl-mobile-link {
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
   font-weight: 700;
 }
 
 .pl-mobile-badge {
   padding: 0.15rem 0.45rem;
-  color: #4b5563;
-  background-color: #f3f4f6;
+  color: var(--pl-color-text-secondary);
+  background-color: var(--pl-color-surface);
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
@@ -1382,7 +1389,7 @@ function formatDate(date: Date): string {
   place-items: center;
   align-content: center;
   gap: 0.35rem;
-  color: #cbd5e1;
+  color: var(--pl-color-empty);
   pointer-events: none;
 }
 
@@ -1393,7 +1400,7 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-chart-empty span {
-  color: #94a3b8;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1417,7 +1424,7 @@ function formatDate(date: Date): string {
   content: "";
   position: absolute;
   inset: 2.15rem;
-  background: #fff;
+  background: var(--pl-color-background);
   border-radius: inherit;
 }
 
@@ -1431,7 +1438,7 @@ function formatDate(date: Date): string {
   grid-template-columns: 0.7rem minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: center;
-  color: #475569;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1443,20 +1450,20 @@ function formatDate(date: Date): string {
 
 .pl-mobile-category-list b {
   overflow: hidden;
-  color: #334155;
+  color: var(--pl-color-text);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .pl-mobile-category-list em {
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-style: normal;
   font-weight: 700;
 }
 
 .pl-mobile-category-empty {
   grid-template-columns: 1fr !important;
-  color: #94a3b8;
+  color: var(--pl-color-text-secondary);
 }
 
 .pl-mobile-card :deep(.pl-compare-main) {
@@ -1469,13 +1476,13 @@ function formatDate(date: Date): string {
 
 .pl-mobile-plan-text {
   padding: 0.55rem 1rem 1rem;
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
 .pl-mobile-record-date {
   padding: 0.75rem 1rem 0.25rem;
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 0.9rem;
   font-weight: 800;
 }
@@ -1497,7 +1504,7 @@ function formatDate(date: Date): string {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #f1f5f9;
+  background-color: var(--pl-color-surface);
   border-radius: 999px;
 }
 
@@ -1521,22 +1528,22 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-record-body strong {
-  color: #0f172a;
+  color: var(--pl-color-text);
   font-size: 0.88rem;
 }
 
 .pl-mobile-record-body span {
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   font-size: 0.78rem;
 }
 
 .pl-mobile-record-row > b {
-  color: #ef4444;
+  color: var(--pl-color-error);
   font-size: 0.98rem;
 }
 
 .pl-mobile-record-row > b.income {
-  color: #16a34a;
+  color: var(--pl-color-success);
 }
 
 .pl-mobile-empty {
@@ -1546,7 +1553,7 @@ function formatDate(date: Date): string {
   gap: 0.35rem;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
+  color: var(--pl-color-empty);
 }
 
 .pl-mobile-empty svg {
@@ -1556,7 +1563,7 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-empty span {
-  color: #94a3b8;
+  color: var(--pl-color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -1575,9 +1582,9 @@ function formatDate(date: Date): string {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
   padding: 0.25rem 1rem 0.5rem;
-  background-color: rgba(255, 255, 255, 0.96);
-  border-top: 1px solid #e5e7eb;
-  box-shadow: 0 -0.75rem 1.5rem rgba(15, 23, 42, 0.05);
+  background-color: color-mix(in srgb, var(--pl-color-background) 96%, transparent);
+  border-top: 1px solid var(--pl-color-border);
+  box-shadow: var(--pl-shadow);
 }
 
 .pl-mobile-tabbar button {
@@ -1585,7 +1592,7 @@ function formatDate(date: Date): string {
   display: grid;
   justify-items: center;
   gap: 0.15rem;
-  color: #64748b;
+  color: var(--pl-color-text-secondary);
   background: transparent;
   border: 0;
   font-size: 0.75rem;
@@ -1593,7 +1600,7 @@ function formatDate(date: Date): string {
 }
 
 .pl-mobile-tabbar button.active {
-  color: #2563eb;
+  color: var(--pl-color-primary);
 }
 
 .pl-mobile-tabbar svg {
@@ -1612,8 +1619,8 @@ function formatDate(date: Date): string {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  background-color: #2563eb;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-primary);
   border-radius: 999px;
   box-shadow: 0 0.5rem 1.25rem rgba(37, 99, 235, 0.35);
   font-size: 2rem;
