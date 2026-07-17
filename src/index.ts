@@ -34,6 +34,42 @@ const settingConfData = ref<SettingConfig>({ ...defaultSettingConfData });
 
 export default class PersonalLedgerPlug extends Plugin {
   private isMobile = getFrontend().endsWith("mobile");
+  private mobileDockView: ReturnType<typeof createApp> | null = null;
+
+  private unmountMobileDockView(): void {
+    this.mobileDockView?.unmount();
+    this.mobileDockView = null;
+  }
+
+  // 注册思源移动端侧栏中的插件 Dock 入口
+  private registerMobileDock(): void {
+    const plugin = this;
+
+    this.addDock({
+      config: {
+        position: "LeftTop",
+        size: { width: 320, height: null },
+        icon: "iconD3PlIcon",
+        title: "pLedger",
+        index: 0,
+        show: true,
+      },
+      data: null,
+      type: "pLedgerMobileDock",
+      init() {
+        const element = this.element as HTMLElement;
+        element.classList.add("pl-mobile-dock");
+        plugin.unmountMobileDockView();
+        plugin.mobileDockView = createApp(MobileView, {
+          settingConfData: settingConfData.value,
+        });
+        plugin.mobileDockView.mount(element);
+      },
+      destroy() {
+        plugin.unmountMobileDockView();
+      },
+    });
+  }
 
   // 初始化顶栏的菜单
   initTopBarMenu = (rect: any) => {
@@ -43,12 +79,7 @@ export default class PersonalLedgerPlug extends Plugin {
       icon: "iconD3PlIcon",
       label: "打开账本",
       click: () => {
-        if (settingConfData.value.documentId) {
-          this.openTab();
-        } else {
-          showMessage("pLedger<br>请先在设置中配置数据存放位置", 3000, "error");
-          this.openSetting();
-        }
+        this.openTab();
       },
     });
 
@@ -158,6 +189,10 @@ export default class PersonalLedgerPlug extends Plugin {
     const frontEnd = getFrontend();
     this.isMobile = frontEnd === "mobile" || frontEnd === "browser-mobile";
 
+    if (this.isMobile) {
+      this.registerMobileDock();
+    }
+
     // 读取插件设置
     settingConfData.value = normalizeSettingConf(await this.loadData(settingConfFile));
     registerSettingIcons(this, settingConfData.value);
@@ -179,7 +214,7 @@ export default class PersonalLedgerPlug extends Plugin {
   }
 
   async onunload() {
-
+    this.unmountMobileDockView();
   }
 
   async uninstall() {

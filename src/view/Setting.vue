@@ -62,9 +62,9 @@
             存放方式
             <p>请选择记账数据的存放方式
               <br />
-              <span style="font-size: 0.75rem; color: #9ca3af;">- 集中存放: 记账数据将按 yyyy-MM 格式存放于指定文档中</span>
+              <span class="pl-setting-help">- 集中存放: 记账数据将按 yyyy-MM 格式存放于指定文档中</span>
               <br />
-              <span style="font-size: 0.75rem; color: #9ca3af;">- 按日期存放: 会按日记配置按天存放记账数据</span>
+              <span class="pl-setting-help">- 按日期存放: 会按日记配置按天存放记账数据</span>
             </p>
           </label>
           <select v-model="localSetting.bookkeepingStorageMode" class="pl-form-input">
@@ -141,7 +141,7 @@
 
     <div class="pl-setting-footer">
       <button class="pl-button" @click="closeSetting">取消</button>
-      <button class="pl-button" style="background-color: #422ad5; color: #fff;" @click="saveSettingData">保存</button>
+      <button class="pl-button pl-setting-primary-button" @click="saveSettingData">保存</button>
     </div>
   </div>
 </template>
@@ -258,6 +258,8 @@ function getIconPreview(symbol: string): string {
 <style scoped lang="css">
 .pl-setting-main {
   padding: 1rem 1.5rem;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-background);
 }
 
 .pl-setting-body {
@@ -269,7 +271,7 @@ function getIconPreview(symbol: string): string {
 .pl-setting-sidebar {
   width: 10rem;
   flex-shrink: 0;
-  background-color: #f3f3f3;
+  background-color: var(--pl-color-surface);
   border-radius: 0.5rem;
 }
 
@@ -279,7 +281,7 @@ function getIconPreview(symbol: string): string {
   border: 0;
   border-radius: 0.4rem;
   text-align: left;
-  color: #555;
+  color: var(--pl-color-text-secondary);
   background-color: transparent;
   cursor: pointer;
   font-size: 1rem;
@@ -287,14 +289,14 @@ function getIconPreview(symbol: string): string {
 }
 
 .pl-setting-sidebar button.active {
-  color: #333;
-  background-color: #e6e6e7;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface-light);
 }
 
 .pl-setting-panel {
   flex: 1;
   padding: 0 1.25rem;
-  background-color: #fff;
+  background-color: var(--pl-color-background);
   border-radius: 0.5rem;
 }
 
@@ -303,7 +305,7 @@ function getIconPreview(symbol: string): string {
   grid-template-columns: 2fr 4fr;
   gap: 1.5rem;
   align-items: center;
-  border-bottom: 1px solid #e6e6e7;
+  border-bottom: 1px solid var(--pl-color-border);
   padding: 1rem 0;
 }
 
@@ -316,7 +318,7 @@ function getIconPreview(symbol: string): string {
 }
 
 .pl-setting-row label {
-  color: #2aa7df;
+  color: var(--pl-color-primary);
   font-size: 1rem;
   font-weight: bold;
 }
@@ -325,27 +327,28 @@ function getIconPreview(symbol: string): string {
 .pl-setting-row pre,
 .pl-setting-intro p {
   font-weight: lighter;
-  color: #666;
+  color: var(--pl-color-text-secondary);
   font-size: 0.9rem;
   line-height: 1.5;
   margin: 0.25rem 0 0;
 }
 
 .pl-setting-row pre {
-  color: #9ca3af;
+  color: var(--pl-color-text-secondary);
   font-size: 0.75rem;
   margin-top: 0.5rem;
 }
 
 .pl-setting-row code {
-  color: #9ca3af;
+  color: var(--pl-color-text-secondary);
 }
 
 .pl-setting-row input,
 .pl-setting-row select,
 .pl-setting-row textarea {
   width: 26rem;
-  background-color: #f3f3f3;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface);
   border-color: transparent;
 }
 
@@ -386,7 +389,7 @@ function getIconPreview(symbol: string): string {
 }
 
 .pl-icon-empty {
-  color: #9ca3af;
+  color: var(--pl-color-text-secondary);
   font-size: 0.9rem;
   padding: 0.75rem 0;
 }
@@ -399,7 +402,7 @@ function getIconPreview(symbol: string): string {
 }
 
 .pl-icon-item {
-  border: 1px solid #e6e6e7;
+  border: 1px solid var(--pl-color-border);
   border-radius: 0.5rem;
   padding: 0.5rem;
 }
@@ -410,7 +413,7 @@ function getIconPreview(symbol: string): string {
 }
 
 .pl-icon-info strong {
-  color: #333;
+  color: var(--pl-color-text);
   font-size: 0.9rem;
 }
 
@@ -425,8 +428,8 @@ function getIconPreview(symbol: string): string {
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  color: #333;
-  background-color: #f3f3f3;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface);
   border-radius: 0.4rem;
   flex-shrink: 0;
 }
@@ -438,18 +441,18 @@ function getIconPreview(symbol: string): string {
 }
 
 .pl-icon-error {
-  color: #e23955;
+  color: var(--pl-color-error);
   font-size: 0.85rem;
 }
 
 .pl-setting-intro {
-  border-bottom: 1px solid #e6e6e7;
+  border-bottom: 1px solid var(--pl-color-border);
   padding: 1rem 0;
 }
 
 .pl-setting-intro h3 {
   margin: 0;
-  color: #2aa7df;
+  color: var(--pl-color-primary);
   font-size: 1rem;
 }
 
@@ -458,5 +461,16 @@ function getIconPreview(symbol: string): string {
   justify-content: end;
   gap: 1rem;
   padding-top: 1rem;
+}
+
+.pl-setting-help {
+  color: var(--pl-color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.pl-setting-primary-button {
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-primary);
+  border-color: var(--pl-color-primary);
 }
 </style>

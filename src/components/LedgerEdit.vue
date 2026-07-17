@@ -32,7 +32,7 @@
 
     <div class="pl-ledger-edit-footer">
       <button class="pl-button" @click="close">取消</button>
-      <button style="color: #fff; background-color: #422ad5;" class="pl-button" @click="update">保存</button>
+      <button class="pl-button pl-ledger-save" @click="update">保存</button>
     </div>
   </div>
 </template>
@@ -110,6 +110,7 @@ const close = () => {
 <style scoped lang="css">
 .pl-ledger-edit-main {
   margin: 1rem 1.6rem;
+  color: var(--pl-color-text);
 }
 
 .pl-ledger-edit-label {
@@ -134,12 +135,12 @@ const close = () => {
   margin: 0.5rem 0.75rem 1rem;
   display: block;
   padding-left: 1rem;
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--pl-color-border);
 }
 
 .pl-ledger-badge {
-  background-color: #000;
-  color: #fff;
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-primary);
   width: fit-content;
   justify-content: center;
   align-items: center;
@@ -158,7 +159,7 @@ const close = () => {
 
 .pl-ledger-edit-form {
   margin: 0.5rem 0.75rem 1rem;
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--pl-color-border);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -170,7 +171,7 @@ const close = () => {
 }
 
 .pl-ledger-edit-form legend {
-  color: #000;
+  color: var(--pl-color-text);
   justify-content: space-between;
   align-items: center;
   gap: .5rem;
@@ -184,5 +185,11 @@ const close = () => {
   display: flex;
   justify-content: end;
   gap: 1rem;
+}
+
+.pl-ledger-save {
+  color: var(--b3-theme-on-primary, #fff);
+  background-color: var(--pl-color-primary);
+  border-color: var(--pl-color-primary);
 }
 </style>

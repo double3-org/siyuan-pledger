@@ -257,4 +257,50 @@ function deepClone<T>(obj: T): T {
   return JSON.parse(JSON.stringify(obj));
 }
 
-export { getObjectDepth, config2TableMDHeader, json2TableMDBody, tableMD2json, deepClone };
+/**
+ * 校验新建记录所依赖的必要配置，返回可直接展示给用户的错误信息。
+ */
+function getRequiredSettingMessage(setting: SettingConfig, section: "asset" | "bookkeeping"): string {
+  const sectionName = section === "asset" ? "资产" : "记账";
+  const missingFields: string[] = [];
+  const configText = section === "asset" ? setting.config : setting.bookkeepingConfig;
+
+  if (section === "asset") {
+    if (!setting.documentId?.trim()) missingFields.push("数据存放位置");
+  } else {
+    if (!setting.bookkeepingDocumentId?.trim()) missingFields.push("数据存放位置");
+    if (!setting.bookkeepingStorageMode?.trim()) missingFields.push("存放方式");
+  }
+  if (!configText?.trim()) missingFields.push("配置");
+
+  if (missingFields.length > 0) {
+    return `请先配置${sectionName}：${missingFields.join("、")}`;
+  }
+
+  if (section === "bookkeeping" && !["central", "date"].includes(setting.bookkeepingStorageMode)) {
+    return "记账存放方式无效，请先在插件设置中检查";
+  }
+
+  try {
+    const configList = JSON.parse(configText);
+    const isValid = Array.isArray(configList)
+      && configList.length > 0
+      && configList.every((item) => typeof item?.name === "string"
+        && item.name.trim()
+        && Array.isArray(item.children)
+        && item.children.length > 0
+        && item.children.every((child: LedgerItem) => typeof child?.name === "string" && child.name.trim()));
+    return isValid ? "" : `${sectionName}配置格式无效，请先在插件设置中检查`;
+  } catch {
+    return `${sectionName}配置格式无效，请先在插件设置中检查`;
+  }
+}
+
+export {
+  getObjectDepth,
+  config2TableMDHeader,
+  json2TableMDBody,
+  tableMD2json,
+  deepClone,
+  getRequiredSettingMessage,
+};

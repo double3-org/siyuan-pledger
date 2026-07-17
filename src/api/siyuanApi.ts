@@ -9,7 +9,10 @@ import { tableMD2json } from "../utils/pl-utils.js";
 export async function getPathAndNoteId(
   id: string,
 ): Promise<{ notebook: string; path: string }> {
-  const resp = await fetchSyncPost("/api/filetree/getPathByID", { id });
+  const normalizedId = id?.trim();
+  if (!normalizedId) return { notebook: "", path: "" };
+
+  const resp = await fetchSyncPost("/api/filetree/getPathByID", { id: normalizedId });
   if (resp.code !== 0) {
     console.error("获取文件路径失败:", resp);
     return { notebook: "", path: "" };
@@ -23,7 +26,10 @@ export async function getPathAndNoteId(
  * @return {notebook: string; path: string} 笔记本id 和 文件路径
  */
 export async function getHPath(id: string): Promise<string> {
-  const resp = await fetchSyncPost("/api/filetree/getHPathByID", { id });
+  const normalizedId = id?.trim();
+  if (!normalizedId) return "";
+
+  const resp = await fetchSyncPost("/api/filetree/getHPathByID", { id: normalizedId });
   if (resp.code !== 0) {
     console.error("获取文件路径失败:", resp);
     return "";
@@ -39,7 +45,11 @@ export async function getHPath(id: string): Promise<string> {
  * @return {array} 文件树 id, name, path
  */
 export async function getFileTreeById(id: string): Promise<IFile[]> {
+  if (!id?.trim()) return [];
+
   const docPathResp = await getPathAndNoteId(id);
+  if (!docPathResp.notebook || !docPathResp.path) return [];
+
   const fileTreeResp = await fetchSyncPost("/api/filetree/listDocsByPath", {
     notebook: docPathResp.notebook,
     path: docPathResp.path,
@@ -101,6 +111,8 @@ export async function getIDsByHPath(
   notebook: string,
   path: string,
 ): Promise<string[]> {
+  if (!notebook?.trim() || !path?.trim()) return [];
+
   const resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
     notebook,
     path,
@@ -120,6 +132,8 @@ export async function getIDsByHPath(
  * 获取笔记本配置 /api/notebook/getNotebookConf
  */
 export async function getNotebookConf(notebook: string): Promise<any> {
+  if (!notebook?.trim()) return undefined;
+
   const resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
   if (resp.code !== 0) {
     console.error("获取笔记本配置失败:", resp);
@@ -135,6 +149,8 @@ export async function getNotebookConf(notebook: string): Promise<any> {
 export async function getTableBlockByDocId(
   id: string,
 ): Promise<{ id: string; markdown: string }> {
+  if (!id?.trim()) return { id: "", markdown: "" };
+
   const sql = `SELECT id,markdown FROM blocks WHERE root_id = '${id}' AND type = 't' limit 1`;
   const resp = await executeSql(sql);
   if (resp.code !== 0 || resp.data.length < 1) {
@@ -244,9 +260,9 @@ export async function setBlockAttrs(
  * 通过块自定义属性读取记账记录 /api/query/sql
  */
 export async function getBookkeepingRecordsByPledge(storageMode?: string): Promise<(BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[]> {
-  const sql = storageMode
-    ? `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`
-    : "SELECT block_id,value FROM attributes WHERE name = 'custom-pledge'";
+  if (storageMode !== "central" && storageMode !== "date") return [];
+
+  const sql = `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`;
   const resp = await executeSql(sql);
 
   if (resp.code !== 0 || !Array.isArray(resp.data)) {

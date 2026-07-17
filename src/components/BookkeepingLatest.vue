@@ -93,6 +93,7 @@ import { showMessage } from 'siyuan';
 import BookkeepingEdit from './BookkeepingEdit.vue';
 import IconDisplay from "@/components/custom/IconDisplay.vue";
 import { alert } from "../utils/dialog-utils.js"
+import { getRequiredSettingMessage } from "@/utils/pl-utils.js";
 import {
   createDoc,
   createDocWithMdByHPath,
@@ -182,6 +183,11 @@ const changePage = (page: "asset" | "bookkeeping") => {
 
 // 新增记账记录
 const addBookkeepingItem = () => {
+  const validationMessage = getRequiredSettingMessage(props.settingConfData, "bookkeeping");
+  if (validationMessage) {
+    showMessage(validationMessage, 3000, "error");
+    return;
+  }
   const bookkeepingEditDialog = alert(BookkeepingEdit, {
     title: "新增记账记录",
     props: {
@@ -237,6 +243,11 @@ const editBookkeepingItem = (item: TimelineRecord) => {
 
 // 初始化记账记录
 async function initBookkeepingRecords(): Promise<void> {
+  if (getRequiredSettingMessage(props.settingConfData, "bookkeeping")) {
+    billRecords.value = [];
+    return;
+  }
+
   const records = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
   billRecords.value = records.map(toTimelineRecord).sort(sortBillRecord);
 }
@@ -534,7 +545,7 @@ function recordToMarkdown(record: BookkeepingRecord): string {
 
 .pl-card-footer {
   font-size: 0.75rem;
-  color: #9ea2ab;
+  color: var(--pl-color-text-secondary);
 }
 
 .pl-card-footer svg {
@@ -562,7 +573,7 @@ function recordToMarkdown(record: BookkeepingRecord): string {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
+  color: var(--pl-color-empty);
 }
 
 .pl-empty svg {
@@ -573,7 +584,7 @@ function recordToMarkdown(record: BookkeepingRecord): string {
 
 .pl-bookkeeping-date {
   margin: 0 0 0.35rem 0.5rem;
-  color: #111827;
+  color: var(--pl-color-text);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -594,7 +605,7 @@ function recordToMarkdown(record: BookkeepingRecord): string {
 }
 
 .pl-bookkeeping-record:hover {
-  background-color: #f9fafb;
+  background-color: var(--pl-color-surface-light);
 }
 
 .pl-bookkeeping-icon {
@@ -603,7 +614,7 @@ function recordToMarkdown(record: BookkeepingRecord): string {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background-color: #f3f4f6;
+  background-color: var(--pl-color-surface);
   border-radius: 999px;
   font-size: 1rem;
 }
@@ -626,25 +637,25 @@ function recordToMarkdown(record: BookkeepingRecord): string {
 }
 
 .pl-bookkeeping-record-title {
-  color: #111827;
+  color: var(--pl-color-text);
   font-size: 0.8rem;
   font-weight: 600;
 }
 
 .pl-bookkeeping-record-desc {
-  color: #6b7280;
+  color: var(--pl-color-text-secondary);
   font-size: 0.75rem;
   line-height: 1.5;
 }
 
 .pl-bookkeeping-record-time {
-  color: #9ca3af;
+  color: var(--pl-color-text-secondary);
   font-size: 0.75rem;
   line-height: 1.5;
 }
 
 .pl-bookkeeping-record-amount {
-  color: #dc2626;
+  color: var(--pl-color-error);
   font-size: 1.1rem;
   font-weight: 600;
   text-align: right;
@@ -652,15 +663,15 @@ function recordToMarkdown(record: BookkeepingRecord): string {
 }
 
 .pl-bookkeeping-record-amount.income {
-  color: #16a34a;
+  color: var(--pl-color-success);
 }
 
 .pl-bookkeeping-more {
   width: calc(100% - 1rem);
   margin: 0.75rem 0.5rem 0;
-  color: #333;
-  background-color: #e6e6e7;
-  border: 1px solid #e6e6e7;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-surface);
+  border: 1px solid var(--pl-color-border);
   border-radius: 0.5rem;
   cursor: pointer;
   font-weight: bold;
@@ -668,14 +679,14 @@ function recordToMarkdown(record: BookkeepingRecord): string {
 }
 
 .pl-bookkeeping-more:hover {
-  background-color: #e2e2e2;
-  border-color: #e2e2e2;
+  background-color: var(--pl-color-surface-light);
+  border-color: var(--pl-color-border);
 }
 
 .pl-bookkeeping-end {
   margin: 0.75rem 0 0;
   text-align: center;
-  color: #6b7280;
+  color: var(--pl-color-text-secondary);
   font-size: 0.875rem;
 }
 </style>

@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import { showMessage } from 'siyuan'
-import { config2TableMDHeader, json2TableMDBody, deepClone } from '../utils/pl-utils.js';
+import { config2TableMDHeader, json2TableMDBody, deepClone, getRequiredSettingMessage } from '../utils/pl-utils.js';
 import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi';
 const emit = defineEmits<{
   (e: "initData"): void,
@@ -108,6 +108,11 @@ const changePage = (page: "asset" | "bookkeeping") => {
 
 // 新增资产记录
 const addLedgerItem = () => {
+  const validationMessage = getRequiredSettingMessage(props.settingConfData, "asset");
+  if (validationMessage) {
+    showMessage(validationMessage, 3000, "error");
+    return;
+  }
   openLedgerEditDialog("新增资产记录");
 }
 
@@ -260,7 +265,7 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
 
 .pl-card-footer {
   font-size: 0.75rem;
-  color: #9ea2ab;
+  color: var(--pl-color-text-secondary);
 }
 
 .pl-card-footer svg {
@@ -286,7 +291,7 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
+  color: var(--pl-color-empty);
 }
 
 .pl-empty svg {
@@ -310,7 +315,7 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
   margin: 0 0.6rem 1rem;
   padding-bottom: 0.5rem;
   display: grid;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--pl-color-border);
 }
 
 .pl-latest-list button {
@@ -323,7 +328,7 @@ async function replaceLedgerData(year: string, originLedgerData: LedgerItem, led
 
 .pl-latest-list button:hover {
   border: none;
-  background-color: #e5e7eb;
+  background-color: var(--pl-color-surface);
 }
 
 .pl-latest-list button svg {

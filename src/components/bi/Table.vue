@@ -148,7 +148,8 @@ const sumList = computed(() =>
   height: 26.5rem;
   overflow: auto;
   position: relative;
-  background: #fff;
+  color: var(--pl-color-text);
+  background: var(--pl-color-background);
 }
 
 .pl-empty {
@@ -157,7 +158,7 @@ const sumList = computed(() =>
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
+  color: var(--pl-color-empty);
 }
 
 .pl-empty svg {
@@ -175,13 +176,13 @@ const sumList = computed(() =>
 .pl-table-main td {
   white-space: nowrap;
   text-align: right;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--pl-color-border);
 }
 
 .pl-table-main th {
   font-weight: 600;
   text-align: center;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .table-left-width {
@@ -194,7 +195,7 @@ const sumList = computed(() =>
   position: sticky;
   top: 0;
   z-index: 1;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-table-main tfoot td,
@@ -202,7 +203,7 @@ const sumList = computed(() =>
   position: sticky;
   bottom: 0;
   z-index: 1;
-  background: #fff;
+  background: var(--pl-color-background);
   font-weight: 600;
 }
 
@@ -211,7 +212,7 @@ const sumList = computed(() =>
   left: 0;
   z-index: 1;
   text-align: left;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .table-left-2 {
@@ -219,7 +220,7 @@ const sumList = computed(() =>
   left: 80px;
   z-index: 1;
   text-align: left;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-table-main .table-top-left-cross-1 {
@@ -227,7 +228,7 @@ const sumList = computed(() =>
   top: 0;
   left: 0;
   z-index: 2;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-table-main .table-top-left-cross-2 {
@@ -235,7 +236,7 @@ const sumList = computed(() =>
   top: 0;
   left: 80px;
   z-index: 2;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-table-main .table-bottom-left-cross-1 {
@@ -243,7 +244,7 @@ const sumList = computed(() =>
   bottom: 0;
   left: 0;
   z-index: 2;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-table-main .table-bottom-left-cross-2 {
@@ -251,17 +252,17 @@ const sumList = computed(() =>
   bottom: 0;
   left: 80px;
   z-index: 2;
-  background: #fff;
+  background: var(--pl-color-background);
 }
 
 .pl-table-main tr.bg-gray-100 td,
 .pl-table-main tr.bg-gray-100 th {
-  background-color: #f5f5f5;
+  background-color: var(--pl-color-surface-light);
 }
 
 .pl-table-main tr.bg-gray-100 .table-left-1,
 .pl-table-main tr.bg-gray-100 .table-left-2 {
-  background-color: #f5f5f5;
+  background-color: var(--pl-color-surface-light);
 }
 
 .pl-table-main td {
@@ -270,12 +271,12 @@ const sumList = computed(() =>
 }
 
 .pl-table-main tfoot td {
-  color: #111827;
+  color: var(--pl-color-text);
 }
 
 tfoot th,
 tfoot td {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--pl-color-border);
 }
 
 thead span {

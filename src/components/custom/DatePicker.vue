@@ -49,10 +49,11 @@ const placement = computed(() => props.placement || "bottom")
 }
 
 .pl-datepicker-popover {
-  background-color: #ffffff;
+  color: var(--pl-color-text);
+  background-color: var(--pl-color-background);
   border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e5e7eb;
+  box-shadow: var(--pl-shadow);
+  border: 1px solid var(--pl-color-border);
   padding: 0.75rem;
   top: anchor(bottom);
   left: anchor(left);
@@ -69,16 +70,18 @@ const placement = computed(() => props.placement || "bottom")
 
 calendar-date {
   margin: auto;
+  color: var(--pl-color-text);
 
   svg {
     width: 1rem;
     height: 1rem;
-    fill: #6b7280;
+    fill: var(--pl-color-text-secondary);
   }
 
   &::part(button) {
     border: 0;
-    background-color: #fff;
+    color: var(--pl-color-text);
+    background-color: var(--pl-color-background);
     border-radius: 3px;
   }
 }

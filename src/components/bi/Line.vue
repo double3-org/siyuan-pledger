@@ -15,6 +15,7 @@ import * as echarts from 'echarts/core';
 import { TooltipComponent, GridComponent } from 'echarts/components';
 import { LineChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
+import { getPluginThemeColors, observeThemeChange } from '@/utils/theme-utils';
 
 echarts.use([
   TooltipComponent,
@@ -31,6 +32,7 @@ const chartRef = ref<HTMLDivElement | null>(null);
 type EChartsInstance = ReturnType<typeof echarts.init>;
 
 let chartInstance: EChartsInstance | null = null;
+let stopObservingTheme: (() => void) | null = null;
 const hasLineData = computed(() => props.lineData.some(item => Number.isFinite(item.value)));
 
 /**
@@ -57,14 +59,15 @@ function renderChart() {
     (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
   )
 
+  const themeColors = getPluginThemeColors();
   const option = {
     color: ['#4f7df3'],
     xAxis: {
       type: 'time',
-      axisLine: { lineStyle: { color: '#e5e7eb' } },
+      axisLine: { lineStyle: { color: themeColors.border } },
       axisTick: { show: false },
       axisLabel: {
-        color: '#64748b',
+        color: themeColors.textSecondary,
         hideOverlap: true,
         formatter: (value: number) => {
           const d = new Date(value)
@@ -93,7 +96,7 @@ function renderChart() {
       axisLine: { show: false },  // 轴线
       axisTick: { show: false },  // 刻度
       axisLabel: {
-        color: '#64748b',
+        color: themeColors.textSecondary,
         margin: 6,
         formatter: (value: number) => Math.abs(value) >= 10000 ? `${Math.round(value / 10000)}w` : `${Math.round(value)}`,
       },
@@ -102,7 +105,7 @@ function renderChart() {
       max: (v: any) => getYAxisMax(v.max),
       splitLine: {
         lineStyle: {
-          color: '#e5e7eb',
+          color: themeColors.border,
           type: 'dashed',
         },
       },
@@ -116,6 +119,9 @@ function renderChart() {
     },
     tooltip: {
       trigger: 'axis',
+      backgroundColor: themeColors.background,
+      borderColor: themeColors.border,
+      textStyle: { color: themeColors.text },
       formatter: (params: any) => {
         const [time, value] = params[0].value
         const d = new Date(time)
@@ -175,11 +181,13 @@ function getYAxisMax(value: number): number {
 
 onMounted(() => {
   initChart();
+  stopObservingTheme = observeThemeChange(renderChart);
   window.addEventListener('resize', resizeChart);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeChart);
+  stopObservingTheme?.();
   chartInstance?.dispose();
   chartInstance = null;
 });
@@ -204,8 +212,8 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #cbd5e1;
-  background: #fff;
+  color: var(--pl-color-empty);
+  background: var(--pl-color-background);
 }
 
 .pl-empty svg {
