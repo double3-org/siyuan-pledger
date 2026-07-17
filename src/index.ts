@@ -79,12 +79,7 @@ export default class PersonalLedgerPlug extends Plugin {
       icon: "iconD3PlIcon",
       label: "打开账本",
       click: () => {
-        if (settingConfData.value.documentId) {
-          this.openTab();
-        } else {
-          showMessage("pLedger<br>请先在设置中配置数据存放位置", 3000, "error");
-          this.openSetting();
-        }
+        this.openTab();
       },
     });
 

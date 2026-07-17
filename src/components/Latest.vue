@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import { showMessage } from 'siyuan'
-import { config2TableMDHeader, json2TableMDBody, deepClone } from '../utils/pl-utils.js';
+import { config2TableMDHeader, json2TableMDBody, deepClone, getRequiredSettingMessage } from '../utils/pl-utils.js';
 import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi';
 const emit = defineEmits<{
   (e: "initData"): void,
@@ -108,6 +108,11 @@ const changePage = (page: "asset" | "bookkeeping") => {
 
 // 新增资产记录
 const addLedgerItem = () => {
+  const validationMessage = getRequiredSettingMessage(props.settingConfData, "asset");
+  if (validationMessage) {
+    showMessage(validationMessage, 3000, "error");
+    return;
+  }
   openLedgerEditDialog("新增资产记录");
 }
 

@@ -93,6 +93,7 @@ import { showMessage } from 'siyuan';
 import BookkeepingEdit from './BookkeepingEdit.vue';
 import IconDisplay from "@/components/custom/IconDisplay.vue";
 import { alert } from "../utils/dialog-utils.js"
+import { getRequiredSettingMessage } from "@/utils/pl-utils.js";
 import {
   createDoc,
   createDocWithMdByHPath,
@@ -182,6 +183,11 @@ const changePage = (page: "asset" | "bookkeeping") => {
 
 // 新增记账记录
 const addBookkeepingItem = () => {
+  const validationMessage = getRequiredSettingMessage(props.settingConfData, "bookkeeping");
+  if (validationMessage) {
+    showMessage(validationMessage, 3000, "error");
+    return;
+  }
   const bookkeepingEditDialog = alert(BookkeepingEdit, {
     title: "新增记账记录",
     props: {
@@ -237,6 +243,11 @@ const editBookkeepingItem = (item: TimelineRecord) => {
 
 // 初始化记账记录
 async function initBookkeepingRecords(): Promise<void> {
+  if (getRequiredSettingMessage(props.settingConfData, "bookkeeping")) {
+    billRecords.value = [];
+    return;
+  }
+
   const records = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
   billRecords.value = records.map(toTimelineRecord).sort(sortBillRecord);
 }

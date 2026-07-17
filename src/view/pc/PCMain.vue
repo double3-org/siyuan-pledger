@@ -232,6 +232,7 @@ import Compare from '@/components/bi/Compare.vue';
 import Plan from '@/components/bi/Plan.vue';
 import Table from '@/components/bi/Table.vue';
 import DatePicker from '@/components/custom/DatePicker.vue';
+import { getRequiredSettingMessage } from '@/utils/pl-utils.js';
 import { getPluginThemeColors, observeThemeChange } from '@/utils/theme-utils';
 
 echarts.use([
@@ -511,6 +512,11 @@ onBeforeUnmount(() => {
 });
 
 async function initBookkeepingSummaryData(): Promise<void> {
+  if (getRequiredSettingMessage(props.settingConfData, "bookkeeping")) {
+    bookkeepingRecords.value = [];
+    return;
+  }
+
   try {
     bookkeepingRecords.value = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
   } catch (error) {
@@ -1003,6 +1009,8 @@ async function initData() {
 }
 
 async function getAssetLedgerListByDateRange(rangeStartDate: string, rangeEndDate: string): Promise<LedgerItem[]> {
+  if (getRequiredSettingMessage(props.settingConfData, "asset")) return [];
+
   const startYear = rangeStartDate.split("-")[0];
   const endYear = rangeEndDate.split("-")[0];
   const yearDocs = await getYearDocs(props.settingConfData.documentId);

@@ -220,7 +220,7 @@ import {
   setBlockAttrs,
   updateBlockContent,
 } from '@/api/siyuanApi.js';
-import { config2TableMDHeader, deepClone, json2TableMDBody } from '@/utils/pl-utils.js';
+import { config2TableMDHeader, deepClone, getRequiredSettingMessage, json2TableMDBody } from '@/utils/pl-utils.js';
 import { alert } from "@/utils/dialog-utils.js";
 import BookkeepingEdit from '@/components/BookkeepingEdit.vue';
 import Compare from '@/components/bi/Compare.vue';
@@ -445,11 +445,21 @@ async function initAssetData() {
 }
 
 async function initBookkeepingRecords(): Promise<void> {
+  if (getRequiredSettingMessage(props.settingConfData, "bookkeeping")) {
+    bookkeepingRecords.value = [];
+    return;
+  }
+
   const records = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
   bookkeepingRecords.value = records.map(toTimelineRecord).sort(sortBookkeepingRecord);
 }
 
 function addBookkeepingItem() {
+  const validationMessage = getRequiredSettingMessage(props.settingConfData, "bookkeeping");
+  if (validationMessage) {
+    showMessage(validationMessage, 3000, "error");
+    return;
+  }
   const bookkeepingEditDialog = alert(BookkeepingEdit, {
     title: "新增记账记录",
     isMobile: true,
@@ -503,6 +513,13 @@ function editLedgerItem(item: LedgerItem) {
 }
 
 function openLedgerEditDialog(title: string, ledgerData?: LedgerItem) {
+  if (!ledgerData) {
+    const validationMessage = getRequiredSettingMessage(props.settingConfData, "asset");
+    if (validationMessage) {
+      showMessage(validationMessage, 3000, "error");
+      return;
+    }
+  }
   const originalLedgerData = ledgerData ? deepClone(ledgerData) : undefined;
   const ledgerEditDialog = alert(LedgerEdit, {
     title,
@@ -750,6 +767,8 @@ async function getDailyBookkeepingDocumentId(record: BookkeepingRecord, settingC
 }
 
 async function getAssetLedgerListByDateRange(rangeStartDate: string, rangeEndDate: string): Promise<LedgerItem[]> {
+  if (getRequiredSettingMessage(props.settingConfData, "asset")) return [];
+
   const yearDocs = await getYearDocs(props.settingConfData.documentId);
   if (!yearDocs) return [];
 
