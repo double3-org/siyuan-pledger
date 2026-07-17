@@ -24,7 +24,7 @@
   下一代前端构建工具，提供极速的开发体验
    [去看看](https://github.com/vitejs/vite) 
 
-- **其他** 
+- **其他**  
   `@vitejs/plugin-vue`、`TypeScript`、`vue-tsc`、`ts-node`、`@types/node`、`cross-env`、`autoprefixer`、`fast-glob`、`minimist`、`rollup-plugin-livereload`、`vite-plugin-static-copy`、`vite-plugin-zip-pack` 等构建工具
 
 
@@ -55,7 +55,7 @@
   一个完全免费、开源的多人协作记账 Web App
    [去看看](https://github.com/glink25/Cent) 
 
--- **andrej-karpathy-skills**  
+- **andrej-karpathy-skills**  
   一个单一的 CLAUDE.md 文件，用于改善 Claude Code 的行为
    [去看看](https://github.com/multica-ai/andrej-karpathy-skills)  
 
