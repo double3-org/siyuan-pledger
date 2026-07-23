@@ -32,5 +32,6 @@ declare global {
     childName: string; // 二级分类
     amount: number; // 金额
     remark: string; // 备注
+    storageRootId?: string; // 记账配置对应的数据根位置
   }
 }

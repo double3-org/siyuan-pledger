@@ -84,7 +84,7 @@
       <!-- 左侧 -->
       <div class="pl-pc-main-left">
         <BookkeepingLatest :settingConfData="settingConfData" :activePage="activePage" @changePage="changePage"
-          @record-saved="refreshBookkeepingStats">
+          @records-changed="handleBookkeepingRecordsChanged">
         </BookkeepingLatest>
       </div>
 
@@ -221,7 +221,7 @@ import * as echarts from 'echarts/core';
 import { GraphicComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
 import { LineChart, PieChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
-import { getBookkeepingRecordsByPledge, getCurrentDateTime, getYearDocs, getLedgerListByYearDocId } from '@/api/siyuanApi.js';
+import { getCurrentDateTime } from '@/api/siyuanApi';
 import { showMessage } from 'siyuan';
 
 import Latest from '@/components/Latest.vue';
@@ -232,7 +232,7 @@ import Compare from '@/components/bi/Compare.vue';
 import Plan from '@/components/bi/Plan.vue';
 import Table from '@/components/bi/Table.vue';
 import DatePicker from '@/components/custom/DatePicker.vue';
-import { getRequiredSettingMessage } from '@/utils/pl-utils.js';
+import { getAssetLedgerListByDateRange } from '@/services/assetLedgerService';
 import { getPluginThemeColors, observeThemeChange } from '@/utils/theme-utils';
 
 echarts.use([
@@ -469,7 +469,6 @@ watch(activePage, async (page) => {
     disposeBookkeepingCharts();
     return;
   }
-  await initBookkeepingSummaryData();
   await nextTick();
   queueRenderBookkeepingCharts();
 });
@@ -499,9 +498,6 @@ onMounted(async () => {
     bookkeepingChartResizeObserver = new ResizeObserver(queueRenderBookkeepingCharts);
   }
   stopObservingTheme = observeThemeChange(queueRenderBookkeepingCharts);
-  if (activePage.value === "bookkeeping") {
-    initBookkeepingSummaryData();
-  }
 });
 
 onBeforeUnmount(() => {
@@ -511,24 +507,17 @@ onBeforeUnmount(() => {
   disposeBookkeepingCharts();
 });
 
-async function initBookkeepingSummaryData(): Promise<void> {
-  if (getRequiredSettingMessage(props.settingConfData, "bookkeeping")) {
-    bookkeepingRecords.value = [];
-    return;
-  }
+type BookkeepingViewRecord = BookkeepingRecord & {
+  id: string;
+  icon: string;
+  displayTime: string;
+  blockId?: string;
+  documentId?: string;
+  createdAt?: string;
+};
 
-  try {
-    bookkeepingRecords.value = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
-  } catch (error) {
-    console.error("初始化记账统计数据失败", error);
-    bookkeepingRecords.value = [];
-  }
-}
-
-async function refreshBookkeepingStats(): Promise<void> {
-  await initBookkeepingSummaryData();
-  await nextTick();
-  queueRenderBookkeepingCharts();
+function handleBookkeepingRecordsChanged(records: BookkeepingViewRecord[]): void {
+  bookkeepingRecords.value = records;
 }
 
 async function searchBookkeeping(): Promise<void> {
@@ -952,7 +941,7 @@ const search = async () => {
     showMessage("起始日期不能晚于结束日期", 2000, "info");
     return;
   }
-  const data = await getAssetLedgerListByDateRange(startDate.value, endDate.value);
+  const data = await getAssetLedgerListByDateRange(props.settingConfData, startDate.value, endDate.value);
   applyAssetRightData(data);
 }
 
@@ -964,7 +953,7 @@ async function initData() {
   const today = (await getCurrentDateTime()).dateObj;
   const rangeStartDate = formatBookkeepingDate(addBookkeepingDays(today, -364));
   const rangeEndDate = formatBookkeepingDate(today);
-  const accountList = await getAssetLedgerListByDateRange(rangeStartDate, rangeEndDate);
+  const accountList = await getAssetLedgerListByDateRange(props.settingConfData, rangeStartDate, rangeEndDate);
   // 根据 time 字段, 取最新的日期, 和第二新的日期
   allTimeSet.value.clear();
   const timeArr = accountList
@@ -1006,33 +995,6 @@ async function initData() {
   // 右侧计划图, 计算计划完成率
   const planTarget = parseBookkeepingAmount(props.settingConfData.planNum, 1000000);
   planRate.value = planTarget > 0 ? sum / planTarget : 0;
-}
-
-async function getAssetLedgerListByDateRange(rangeStartDate: string, rangeEndDate: string): Promise<LedgerItem[]> {
-  if (getRequiredSettingMessage(props.settingConfData, "asset")) return [];
-
-  const startYear = rangeStartDate.split("-")[0];
-  const endYear = rangeEndDate.split("-")[0];
-  const yearDocs = await getYearDocs(props.settingConfData.documentId);
-  if (!yearDocs) return [];
-
-  const yearDocIds: string[] = [];
-  for (let y = Number(startYear); y <= Number(endYear); y++) {
-    const yearDoc = yearDocs.find(item => item.name.replace(".sy", "") == String(y));
-    if (yearDoc) {
-      yearDocIds.push(yearDoc.id);
-    }
-  }
-
-  const data: LedgerItem[] = [];
-  for (const yearDocId of yearDocIds) {
-    const accountList = await getLedgerListByYearDocId(yearDocId, props.settingConfData);
-    data.push(...accountList.filter(item => {
-      if (!item.time) return false;
-      return item.time >= rangeStartDate && item.time <= rangeEndDate;
-    }));
-  }
-  return data;
 }
 
 function applyAssetRightData(data: LedgerItem[]): void {

@@ -1,5 +1,28 @@
 import { fetchSyncPost, IWebSocketData, IFile } from "siyuan";
-import { tableMD2json } from "../utils/pl-utils.js";
+import { tableMD2json } from "../utils/pl-utils";
+
+/** 统一处理思源 API 的网络异常，避免单次请求失败打断整个保存流程。 */
+async function postSiyuanApi(
+  path: string,
+  data: Record<string, unknown> = {},
+): Promise<IWebSocketData | undefined> {
+  try {
+    return await fetchSyncPost(path, data);
+  } catch (error) {
+    console.error(`调用 ${path} 失败:`, error);
+    return undefined;
+  }
+}
+
+/** 从写操作响应中安全提取块 ID，响应异常时返回空字符串。 */
+function getOperationId(resp: IWebSocketData | undefined, action: string): string {
+  const id = resp?.data?.[0]?.doOperations?.[0]?.id;
+  if (resp?.code !== 0 || typeof id !== "string" || !id) {
+    console.error(`${action}失败或返回格式错误:`, resp);
+    return "";
+  }
+  return id;
+}
 
 /**
  * 根据文档id获取文档路径 和 notebook id /api/filetree/getPathByID
@@ -12,8 +35,8 @@ export async function getPathAndNoteId(
   const normalizedId = id?.trim();
   if (!normalizedId) return { notebook: "", path: "" };
 
-  const resp = await fetchSyncPost("/api/filetree/getPathByID", { id: normalizedId });
-  if (resp.code !== 0) {
+  const resp = await postSiyuanApi("/api/filetree/getPathByID", { id: normalizedId });
+  if (!resp || resp.code !== 0 || !resp.data?.notebook || !resp.data?.path) {
     console.error("获取文件路径失败:", resp);
     return { notebook: "", path: "" };
   }
@@ -29,8 +52,8 @@ export async function getHPath(id: string): Promise<string> {
   const normalizedId = id?.trim();
   if (!normalizedId) return "";
 
-  const resp = await fetchSyncPost("/api/filetree/getHPathByID", { id: normalizedId });
-  if (resp.code !== 0) {
+  const resp = await postSiyuanApi("/api/filetree/getHPathByID", { id: normalizedId });
+  if (!resp || resp.code !== 0 || typeof resp.data !== "string") {
     console.error("获取文件路径失败:", resp);
     return "";
   }
@@ -50,11 +73,11 @@ export async function getFileTreeById(id: string): Promise<IFile[]> {
   const docPathResp = await getPathAndNoteId(id);
   if (!docPathResp.notebook || !docPathResp.path) return [];
 
-  const fileTreeResp = await fetchSyncPost("/api/filetree/listDocsByPath", {
+  const fileTreeResp = await postSiyuanApi("/api/filetree/listDocsByPath", {
     notebook: docPathResp.notebook,
     path: docPathResp.path,
   });
-  if (fileTreeResp.code !== 0) {
+  if (!fileTreeResp || fileTreeResp.code !== 0 || !Array.isArray(fileTreeResp.data?.files)) {
     console.error("获取文件树失败:", fileTreeResp);
     return [];
   }
@@ -76,11 +99,19 @@ export async function createDoc(
 ): Promise<string> {
   const docHPath = await getHPath(pDocId);
   const docPathResp = await getPathAndNoteId(pDocId);
-  const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+  if (!docHPath || !docPathResp.notebook || !docPathResp.path || !title?.trim()) {
+    console.error("创建文档失败：父文档路径无效或文档标题为空");
+    return "";
+  }
+  const resp = await postSiyuanApi("/api/filetree/createDocWithMd", {
     notebook: docPathResp.notebook,
     path: docHPath + "/" + title,
     markdown: "",
   });
+  if (!resp || resp.code !== 0 || typeof resp.data !== "string") {
+    console.error("创建文档失败或返回格式错误:", resp);
+    return "";
+  }
   return resp.data;
 }
 
@@ -92,12 +123,12 @@ export async function createDocWithMdByHPath(
   path: string,
   markdown = "",
 ): Promise<string> {
-  const resp = await fetchSyncPost("/api/filetree/createDocWithMd", {
+  const resp = await postSiyuanApi("/api/filetree/createDocWithMd", {
     notebook,
     path,
     markdown,
   });
-  if (resp.code !== 0) {
+  if (!resp || resp.code !== 0 || typeof resp.data !== "string") {
     console.error("按路径创建文档失败:", resp);
     return "";
   }
@@ -113,11 +144,11 @@ export async function getIDsByHPath(
 ): Promise<string[]> {
   if (!notebook?.trim() || !path?.trim()) return [];
 
-  const resp = await fetchSyncPost("/api/filetree/getIDsByHPath", {
+  const resp = await postSiyuanApi("/api/filetree/getIDsByHPath", {
     notebook,
     path,
   });
-  if (resp.code !== 0) {
+  if (!resp || resp.code !== 0) {
     console.error("根据人类可读路径获取 IDs 失败:", resp);
     return [];
   }
@@ -134,8 +165,8 @@ export async function getIDsByHPath(
 export async function getNotebookConf(notebook: string): Promise<any> {
   if (!notebook?.trim()) return undefined;
 
-  const resp = await fetchSyncPost("/api/notebook/getNotebookConf", { notebook });
-  if (resp.code !== 0) {
+  const resp = await postSiyuanApi("/api/notebook/getNotebookConf", { notebook });
+  if (!resp || resp.code !== 0) {
     console.error("获取笔记本配置失败:", resp);
     return undefined;
   }
@@ -153,10 +184,14 @@ export async function getTableBlockByDocId(
 
   const sql = `SELECT id,markdown FROM blocks WHERE root_id = '${id}' AND type = 't' limit 1`;
   const resp = await executeSql(sql);
-  if (resp.code !== 0 || resp.data.length < 1) {
+  if (!resp || resp.code !== 0 || !Array.isArray(resp.data) || resp.data.length < 1) {
     return { id: "", markdown: "" };
   }
-  return resp.data[0];
+  const tableBlock = resp.data[0];
+  if (typeof tableBlock?.id !== "string" || typeof tableBlock?.markdown !== "string") {
+    return { id: "", markdown: "" };
+  }
+  return tableBlock;
 }
 
 /**
@@ -167,14 +202,14 @@ export async function insertTableBlock(
   docId: string,
   mkStr: string,
 ): Promise<string> {
-  const resp = await fetchSyncPost("/api/block/insertBlock", {
+  const resp = await postSiyuanApi("/api/block/insertBlock", {
     dataType: "markdown",
     data: mkStr,
     nextID: "",
     previousID: "",
     parentID: docId,
   });
-  return resp.data[0].doOperations[0].id;
+  return getOperationId(resp, "插入表格块");
 }
 
 /**
@@ -185,14 +220,14 @@ export async function insertMarkdownBlock(
   docId: string,
   mkStr: string,
 ): Promise<string> {
-  const resp = await fetchSyncPost("/api/block/insertBlock", {
+  const resp = await postSiyuanApi("/api/block/insertBlock", {
     dataType: "markdown",
     data: mkStr,
     nextID: "",
     previousID: "",
     parentID: docId,
   });
-  return resp.data[0].doOperations[0].id;
+  return getOperationId(resp, "插入 Markdown 块");
 }
 
 /**
@@ -203,29 +238,29 @@ export async function updateBlockContent(
   blockId: string,
   mkStr: string,
 ): Promise<string> {
-  const resp = await fetchSyncPost("/api/block/updateBlock", {
+  const resp = await postSiyuanApi("/api/block/updateBlock", {
     dataType: "markdown",
     data: mkStr,
     id: blockId,
   });
-  return resp.data[0].doOperations[0].id;
+  return getOperationId(resp, "更新块内容");
 }
 
 /**
  * 删除块 /api/block/deleteBlock
  */
 export async function deleteBlock(blockId: string): Promise<boolean> {
-  const resp = await fetchSyncPost("/api/block/deleteBlock", {
+  const resp = await postSiyuanApi("/api/block/deleteBlock", {
     id: blockId,
   });
-  return resp.code === 0;
+  return resp?.code === 0;
 }
 
 /**
  * 执行 sql /api/query/sql
  */
-async function executeSql(sql: string): Promise<IWebSocketData> {
-  return fetchSyncPost("/api/query/sql", { stmt: sql });
+async function executeSql(sql: string): Promise<IWebSocketData | undefined> {
+  return postSiyuanApi("/api/query/sql", { stmt: sql });
 }
 
 /**
@@ -235,11 +270,11 @@ async function executeSql(sql: string): Promise<IWebSocketData> {
  * @return {boolean} 是否锁定成功
  */
 export async function blockDocument(id: string): Promise<boolean> {
-  const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+  const resp = await postSiyuanApi("/api/attr/setBlockAttrs", {
     id: id,
     attrs: { "custom-sy-readonly": "true" },
   });
-  return resp.code === 0;
+  return resp?.code === 0;
 }
 
 /**
@@ -249,23 +284,26 @@ export async function setBlockAttrs(
   id: string,
   attrs: Record<string, string>,
 ): Promise<boolean> {
-  const resp = await fetchSyncPost("/api/attr/setBlockAttrs", {
+  const resp = await postSiyuanApi("/api/attr/setBlockAttrs", {
     id,
     attrs,
   });
-  return resp.code === 0;
+  return resp?.code === 0;
 }
 
 /**
  * 通过块自定义属性读取记账记录 /api/query/sql
  */
-export async function getBookkeepingRecordsByPledge(storageMode?: string): Promise<(BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[]> {
+export async function getBookkeepingRecordsByPledge(
+  storageMode?: string,
+  storageRootId?: string,
+): Promise<(BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[]> {
   if (storageMode !== "central" && storageMode !== "date") return [];
 
   const sql = `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`;
   const resp = await executeSql(sql);
 
-  if (resp.code !== 0 || !Array.isArray(resp.data)) {
+  if (!resp || resp.code !== 0 || !Array.isArray(resp.data)) {
     return [];
   }
 
@@ -281,6 +319,7 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
         childName: data.childName,
         amount: Number(data.amount) || 0,
         remark: data.remark || "",
+        ...(data.storageRootId ? { storageRootId: data.storageRootId } : {}),
         blockId: data.blockId || item.block_id,
         ...(data.documentId ? { documentId: data.documentId } : {}),
         ...(data.displayTime ? { displayTime: data.displayTime } : {}),
@@ -289,6 +328,48 @@ export async function getBookkeepingRecordsByPledge(storageMode?: string): Promi
     } catch (error) {
       console.error("解析记账记录属性失败", { item, error });
     }
+  }
+
+  if (storageRootId?.trim()) {
+    const rootId = storageRootId.trim();
+    const rootLocation = storageMode === "central"
+      ? await getPathAndNoteId(rootId)
+      : undefined;
+    const rootPath = rootLocation?.path.replace(/\/+$/, "") || "";
+    const locationCache = new Map<string, { notebook: string; path: string }>();
+    const scopedRecords: typeof records = [];
+
+    for (const record of records) {
+      if (record.storageRootId) {
+        if (record.storageRootId === rootId) scopedRecords.push(record);
+        continue;
+      }
+
+      // 兼容历史记录：旧属性没有 storageRootId 时，通过文档位置判断归属。
+      if (!record.documentId) continue;
+      let location = locationCache.get(record.documentId);
+      if (!location) {
+        location = await getPathAndNoteId(record.documentId);
+        locationCache.set(record.documentId, location);
+      }
+      if (!location.notebook) continue;
+
+      if (storageMode === "date") {
+        if (location.notebook === rootId) scopedRecords.push(record);
+        continue;
+      }
+
+      if (
+        rootLocation?.notebook
+        && rootPath
+        && location.notebook === rootLocation.notebook
+        && (location.path === rootPath || location.path.startsWith(`${rootPath}/`))
+      ) {
+        scopedRecords.push(record);
+      }
+    }
+
+    return scopedRecords.sort((a, b) => b.date.localeCompare(a.date));
   }
 
   return records.sort((a, b) => b.date.localeCompare(a.date));
@@ -305,8 +386,8 @@ export async function getCurrentTime() {
  * 获取当前系统日期时间 /api/system/currentTime
  */
 export async function getCurrentDateTime(): Promise<{ date: string; time: string; iso: string; dateObj: Date }> {
-  const resp = await fetchSyncPost("/api/system/currentTime");
-  const dateObj = resp.code === 0 ? parseSiyuanCurrentTime(resp.data) : new Date();
+  const resp = await postSiyuanApi("/api/system/currentTime");
+  const dateObj = resp?.code === 0 ? parseSiyuanCurrentTime(resp.data) : new Date();
   return {
     date: formatLocalDate(dateObj),
     time: formatLocalTime(dateObj),

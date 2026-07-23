@@ -149,6 +149,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { defaultIconSymbols } from '@/config/defaultIcons';
+import { sanitizeSvgSymbol } from '@/utils/pl-utils';
 
 const props = defineProps<{
   // 关闭设置面板
@@ -226,7 +227,7 @@ function parseIconConfig(iconConfig: string): IconConfigItem[] {
 }
 
 function parseIconSymbol(symbol: string): IconConfigItem | undefined {
-  const symbolText = symbol.trim().match(/<symbol[\s\S]*?<\/symbol>/)?.[0] || "";
+  const symbolText = sanitizeSvgSymbol(symbol);
   const name = getSymbolName(symbolText);
   if (!symbolText || !name || !name.startsWith("icon") || defaultIconNames.has(name)) return undefined;
 
@@ -245,11 +246,12 @@ function getSymbolViewBox(symbol: string): string {
 }
 
 function getIconPreview(symbol: string): string {
-  const viewBox = symbol.match(/\bviewBox=["']([^"']+)["']/)?.[1] || "0 0 1024 1024";
-  const content = symbol
+  const safeSymbol = sanitizeSvgSymbol(symbol);
+  const viewBox = safeSymbol.match(/\bviewBox=["']([^"']+)["']/)?.[1] || "0 0 1024 1024";
+  const content = safeSymbol
     .replace(/<symbol[^>]*>/, "")
     .replace(/<\/symbol>/, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "");
+    .trim();
 
   return `<svg viewBox="${viewBox}" aria-hidden="true">${content}</svg>`;
 }

@@ -1,6 +1,6 @@
 {
   "name": "siyuan-pledger",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "type": "module",
   "description": "A personal ledger plugin for SiYuan.",
   "repository": "https://github.com/double3-org/siyuan-pledger",
@@ -24,6 +24,7 @@
     "fast-glob": "^3.2.12",
     "minimist": "^1.2.8",
     "rollup-plugin-livereload": "^2.0.5",
+    "sharp": "^0.35.3",
     "siyuan": "1.1.5",
     "siyuan-plugin-cli": "^2.5.0",
     "ts-node": "^10.9.2",

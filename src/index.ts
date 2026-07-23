@@ -7,7 +7,6 @@ import {
   getFrontend,
   openTab,
   showMessage,
-  openMobileFileById,
 } from "siyuan";
 import { createApp, ref } from "vue";
 
@@ -17,6 +16,7 @@ import SettingView from "./view/Setting.vue";
 import MainView from "./view/pc/PCMain.vue";
 import MobileView from "./view/mobile/MobileMain.vue";
 import { defaultIconSymbols } from "./config/defaultIcons";
+import { getSettingValidationMessage, sanitizeSvgSymbol } from "./utils/pl-utils";
 import "./index.css";
 
 const settingConfFile = "setting.json"; // 插件的数据，会被保存在 data/storage/petal/<name>/​ 下
@@ -131,14 +131,18 @@ export default class PersonalLedgerPlug extends Plugin {
     }
 
     function saveSetting(settingData: SettingConfig) {
-      if (checkSettingConf(settingData)) {
-        const nextSettingData = normalizeSettingConf(settingData);
-        self.saveData(settingConfFile, nextSettingData);
-        settingConfData.value = nextSettingData;
-        registerSettingIcons(self, nextSettingData);
-        showMessage("设置已保存", 2000, "info");
-        closeSetting();
+      const validationMessage = getSettingValidationMessage(settingData);
+      if (validationMessage) {
+        showMessage(validationMessage, 3000, "error");
+        return;
       }
+
+      const nextSettingData = normalizeSettingConf(settingData);
+      self.saveData(settingConfFile, nextSettingData);
+      settingConfData.value = nextSettingData;
+      registerSettingIcons(self, nextSettingData);
+      showMessage("设置已保存", 2000, "info");
+      closeSetting();
     }
 
     const settingView = createApp(SettingView, {
@@ -154,7 +158,7 @@ export default class PersonalLedgerPlug extends Plugin {
   openTab(): void {
     if (this.isMobile) {
       // 移动端弹窗打开
-      const mainView = alert(MobileView, {
+      alert(MobileView, {
         title: "pLedger",
         isMobile: true,
         props: {
@@ -223,14 +227,6 @@ export default class PersonalLedgerPlug extends Plugin {
   }
 }
 
-function checkSettingConf(data: any): boolean {
-  if (!data) {
-    return false;
-  }
-
-  return true;
-}
-
 function normalizeSettingConf(data: Partial<SettingConfig> | undefined): SettingConfig {
   return {
     ...defaultSettingConfData,
@@ -246,8 +242,8 @@ function getIconSymbols(iconConfig: string): string[] {
     if (!Array.isArray(iconList)) return [];
 
     return iconList
-      .map((item: IconConfigItem) => item?.symbol)
-      .filter((symbol: string) => typeof symbol === "string" && symbol.includes("<symbol"));
+      .map((item: IconConfigItem) => sanitizeSvgSymbol(item?.symbol || ""))
+      .filter(Boolean);
   } catch (error) {
     console.error("图标配置解析失败，仅使用内置默认图标", error);
     return [];
