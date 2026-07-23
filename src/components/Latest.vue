@@ -76,15 +76,15 @@
 
 <script setup lang="ts">
 import { showMessage } from 'siyuan'
-import { config2TableMDHeader, json2TableMDBody, deepClone, getRequiredSettingMessage } from '../utils/pl-utils.js';
-import { getFileTreeById, createDoc, getTableBlockByDocId, insertTableBlock, updateBlockContent, blockDocument } from '../api/siyuanApi';
+import { deepClone, getRequiredSettingMessage } from '../utils/pl-utils';
+import { replaceAssetLedger, saveAssetLedger } from '@/services/assetLedgerService';
 const emit = defineEmits<{
   (e: "initData"): void,
   (e: "changePage", value: "asset" | "bookkeeping"): void
 }>()
 
 import LedgerEdit from './LedgerEdit.vue';
-import { alert } from "../utils/dialog-utils.js"
+import { alert } from "../utils/dialog-utils"
 import IconDisplay from "@/components/custom/IconDisplay.vue";
 
 const props = defineProps<{
@@ -131,14 +131,17 @@ const openLedgerEditDialog = (title: string, ledgerData?: LedgerItem) => {
       confData: props.settingConfData,
       isMobile: props.isMobile,
       ledgerData: ledgerData ? [deepClone(ledgerData)] : undefined,
-      onUpdate: (item: LedgerItem[]) => {
-        editData(item, originalLedgerData).then(() => {
+      onUpdate: async (item: LedgerItem[]) => {
+        try {
+          const saved = await editData(item, originalLedgerData);
+          if (!saved) return;
           showMessage("保存成功", 3000, "info");
-          ledgerEditDialog?.destroy()
-          setTimeout(() => {
-            emit("initData");
-          }, 500);
-        });
+          ledgerEditDialog?.destroy();
+          emit("initData");
+        } catch (error) {
+          console.error("保存资产记录失败", error);
+          showMessage("资产保存失败，原数据未修改", 3000, "error");
+        }
       }
     }
   });
@@ -149,104 +152,26 @@ const openLedgerEditDialog = (title: string, ledgerData?: LedgerItem) => {
  * 如果 originLedgerData 不存在，说明是新增资产记录
  * 如果 originLedgerData 存在，说明是修改资产记录
  */
-async function editData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<void> {
+async function editData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<boolean> {
   const yearDate = item[0].time?.split('-')[0];
-  if (!yearDate) return;
+  if (!yearDate) return false;
 
   // 没有原始数据，说明是新增资产记录，直接保存
   if (!originLedgerData) {
-    await saveData(yearDate, item);
-    return;
+    await saveAssetLedger(props.settingConfData, yearDate, item);
+    return true;
   }
 
   const editLedgerData = deepClone(item[0]);
   const originYear = originLedgerData.time?.split('-')[0];
-  if (!originYear) return;
+  if (!originYear) return false;
 
   // 如果年份相同，说明是修改资产记录，直接替换
   // 如果年份不同，未知异常，不处理
   if (originYear === yearDate) {
-    await replaceLedgerData(yearDate, originLedgerData, editLedgerData);
-    return;
+    return replaceAssetLedger(props.settingConfData, yearDate, originLedgerData, editLedgerData);
   }
-}
-
-// 保存
-async function saveData(yearDate: string, item: LedgerItem[]): Promise<void> {
-  const itemCopy = deepClone(item);
-  // 获取 documentId 下文件列表
-  const fileList = await getFileTreeById(props.settingConfData.documentId);
-  // 获取 year document id
-  let yearDocumentId = '';
-  const yearFile = fileList.find((file: any) => file.name === yearDate + '.sy' || file.name === yearDate);
-  if (yearFile) yearDocumentId = yearFile.id;
-  if (!yearDocumentId) {
-    yearDocumentId = await createDoc(yearDate ?? '', props.settingConfData.documentId);
-  }
-  // 获取 year document 下第一个 table block
-  let { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
-  if (!tableBlockId) {
-    tableBlockMarkdown = config2TableMDHeader(props.settingConfData.config)
-  }
-  // 追加新的数据行
-  tableBlockMarkdown += "\n" + json2TableMDBody(itemCopy)
-  if (tableBlockId) {
-    // 更新已有 table block
-    tableBlockId = await updateBlockContent(tableBlockId, tableBlockMarkdown);
-  } else {
-    // 插入新的 table block
-    tableBlockId = await insertTableBlock(yearDocumentId, tableBlockMarkdown);
-  }
-  // 锁定文件
-  blockDocument(yearDocumentId)
-}
-
-// 修改
-async function replaceLedgerData(year: string, originLedgerData: LedgerItem, ledgerData: LedgerItem): Promise<void> {
-  // 获取年份文档状态
-  const fileList = await getFileTreeById(props.settingConfData.documentId);
-  let yearDocumentId = '';
-  const yearFile = fileList.find((file: any) => file.name === year + '.sy' || file.name === year);
-  if (yearFile) yearDocumentId = yearFile.id;
-  if (!yearDocumentId) {
-    yearDocumentId = await createDoc(year, props.settingConfData.documentId);
-  }
-  const { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
-
-  // 替换表格行数据
-  const tableLines = tableBlockMarkdown
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.startsWith('|') && line.endsWith('|'));
-
-  let nextTableMarkdown: string;
-  if (tableLines.length < 2) {
-    nextTableMarkdown = `${config2TableMDHeader(props.settingConfData.config)}\n${json2TableMDBody([ledgerData])}`;
-  } else {
-    const headerLines = tableLines.slice(0, 2);
-    const bodyLines = tableLines.slice(2);
-    
-    // 分割表格行
-    const splitTableRow = (line: string): string[] => {
-      return line.slice(1, -1).split('|').map((cell) => cell.trim());
-    };
-    
-    // 判断是否为目标行
-    const isTargetRow = (line: string) => {
-      const cols = splitTableRow(line);
-      return cols[0] === (originLedgerData.time || '') && cols[1] === originLedgerData.name;
-    };
-
-    const matchedIndex = bodyLines.findIndex(isTargetRow);
-    const beforeLines = matchedIndex >= 0 ? bodyLines.slice(0, matchedIndex) : bodyLines;
-    const afterLines = matchedIndex >= 0 ? bodyLines.slice(matchedIndex).filter((line) => !isTargetRow(line)) : [];
-    const nextRows = json2TableMDBody([ledgerData]).split('\n').filter(Boolean);
-
-    nextTableMarkdown = [...headerLines, ...beforeLines, ...nextRows, ...afterLines].join('\n');
-  }
-
-  await updateBlockContent(tableBlockId, nextTableMarkdown);
-  await blockDocument(yearDocumentId);
+  return false;
 }
 
 

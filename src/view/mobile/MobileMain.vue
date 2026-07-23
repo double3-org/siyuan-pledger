@@ -202,26 +202,19 @@ import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/compon
 import { LineChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { showMessage } from 'siyuan';
+import { getCurrentDateTime } from '@/api/siyuanApi';
 import {
-  blockDocument,
-  createDoc,
-  createDocWithMdByHPath,
-  deleteBlock,
-  getBookkeepingRecordsByPledge,
-  getCurrentDateTime,
-  getFileTreeById,
-  getIDsByHPath,
-  getLedgerListByYearDocId,
-  getNotebookConf,
-  getTableBlockByDocId,
-  getYearDocs,
-  insertMarkdownBlock,
-  insertTableBlock,
-  setBlockAttrs,
-  updateBlockContent,
-} from '@/api/siyuanApi.js';
-import { config2TableMDHeader, deepClone, getRequiredSettingMessage, json2TableMDBody } from '@/utils/pl-utils.js';
-import { alert } from "@/utils/dialog-utils.js";
+  getAssetLedgerListByDateRange,
+  replaceAssetLedger,
+  saveAssetLedger,
+} from '@/services/assetLedgerService';
+import {
+  deleteBookkeepingRecord as deleteBookkeepingRecordService,
+  loadBookkeepingRecords,
+  saveBookkeepingRecord as saveBookkeepingRecordService,
+} from '@/services/bookkeepingService';
+import { deepClone, getRequiredSettingMessage } from '@/utils/pl-utils';
+import { alert } from "@/utils/dialog-utils";
 import BookkeepingEdit from '@/components/BookkeepingEdit.vue';
 import Compare from '@/components/bi/Compare.vue';
 import IconDisplay from "@/components/custom/IconDisplay.vue";
@@ -416,7 +409,7 @@ async function initAssetData() {
   const today = (await getCurrentDateTime()).dateObj;
   const rangeStartDate = formatDate(addDays(today, -364));
   const rangeEndDate = formatDate(today);
-  const accountList = await getAssetLedgerListByDateRange(rangeStartDate, rangeEndDate);
+  const accountList = await getAssetLedgerListByDateRange(props.settingConfData, rangeStartDate, rangeEndDate);
   const sortedTimes = Array.from(new Set(accountList.map(item => item.time).filter(Boolean) as string[]))
     .sort((a, b) => b.localeCompare(a));
   const latestDate = sortedTimes[0] || "";
@@ -450,7 +443,7 @@ async function initBookkeepingRecords(): Promise<void> {
     return;
   }
 
-  const records = await getBookkeepingRecordsByPledge(props.settingConfData.bookkeepingStorageMode);
+  const records = await loadBookkeepingRecords(props.settingConfData);
   bookkeepingRecords.value = records.map(toTimelineRecord).sort(sortBookkeepingRecord);
 }
 
@@ -467,15 +460,15 @@ function addBookkeepingItem() {
       confData: props.settingConfData,
       isMobile: true,
       onUpdate: async (record: BookkeepingRecord) => {
-        const savedRecord = await saveBookkeepingRecord(record);
+        const savedRecord = await saveBookkeepingRecordService(record, props.settingConfData);
         if (!savedRecord) return;
-        upsertBookkeepingRecord(savedRecord);
+        upsertBookkeepingRecord(toTimelineRecord(savedRecord));
         bookkeepingEditDialog?.destroy();
       },
       onSaveAgain: async (record: BookkeepingRecord, reset: () => void) => {
-        const savedRecord = await saveBookkeepingRecord(record);
+        const savedRecord = await saveBookkeepingRecordService(record, props.settingConfData);
         if (!savedRecord) return;
-        upsertBookkeepingRecord(savedRecord);
+        upsertBookkeepingRecord(toTimelineRecord(savedRecord));
         reset();
       },
     },
@@ -491,12 +484,12 @@ function editBookkeepingItem(item: TimelineRecord) {
       isMobile: true,
       initialRecord: item,
       onUpdate: async (record: BookkeepingRecord) => {
-        const savedRecord = await saveBookkeepingRecord({
+        const savedRecord = await saveBookkeepingRecordService({
           ...item,
           ...record,
-        });
+        }, props.settingConfData, item);
         if (!savedRecord) return;
-        upsertBookkeepingRecord(savedRecord);
+        upsertBookkeepingRecord(toTimelineRecord(savedRecord));
         bookkeepingEditDialog?.destroy();
       },
       onDeleteRecord: async () => {
@@ -528,195 +521,36 @@ function openLedgerEditDialog(title: string, ledgerData?: LedgerItem) {
       confData: props.settingConfData,
       isMobile: true,
       ledgerData: ledgerData ? [deepClone(ledgerData)] : undefined,
-      onUpdate: (item: LedgerItem[]) => {
-        editAssetData(item, originalLedgerData).then(() => {
+      onUpdate: async (item: LedgerItem[]) => {
+        try {
+          const saved = await editAssetData(item, originalLedgerData);
+          if (!saved) return;
           showMessage("保存成功", 3000, "info");
           ledgerEditDialog?.destroy();
-          setTimeout(initAssetData, 500);
-        });
+          await initAssetData();
+        } catch (error) {
+          console.error("保存资产记录失败", error);
+          showMessage("资产保存失败，原数据未修改", 3000, "error");
+        }
       },
     },
   });
 }
 
-async function editAssetData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<void> {
+async function editAssetData(item: LedgerItem[], originLedgerData?: LedgerItem): Promise<boolean> {
   const yearDate = item[0].time?.split("-")[0];
-  if (!yearDate) return;
+  if (!yearDate) return false;
 
   if (!originLedgerData) {
-    await saveAssetData(yearDate, item);
-    return;
+    await saveAssetLedger(props.settingConfData, yearDate, item);
+    return true;
   }
 
   const originYear = originLedgerData.time?.split("-")[0];
   if (originYear === yearDate) {
-    await replaceLedgerData(yearDate, originLedgerData, deepClone(item[0]));
+    return replaceAssetLedger(props.settingConfData, yearDate, originLedgerData, deepClone(item[0]));
   }
-}
-
-async function saveAssetData(yearDate: string, item: LedgerItem[]): Promise<void> {
-  const fileList = await getFileTreeById(props.settingConfData.documentId);
-  let yearDocumentId = "";
-  const yearFile = fileList.find((file: any) => file.name === `${yearDate}.sy` || file.name === yearDate);
-  if (yearFile) yearDocumentId = yearFile.id;
-  if (!yearDocumentId) {
-    yearDocumentId = await createDoc(yearDate, props.settingConfData.documentId);
-  }
-
-  let { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
-  if (!tableBlockId) {
-    tableBlockMarkdown = config2TableMDHeader(props.settingConfData.config);
-  }
-  tableBlockMarkdown += "\n" + json2TableMDBody(deepClone(item));
-
-  if (tableBlockId) {
-    await updateBlockContent(tableBlockId, tableBlockMarkdown);
-  } else {
-    tableBlockId = await insertTableBlock(yearDocumentId, tableBlockMarkdown);
-  }
-  await blockDocument(yearDocumentId);
-}
-
-async function replaceLedgerData(year: string, originLedgerData: LedgerItem, ledgerData: LedgerItem): Promise<void> {
-  const fileList = await getFileTreeById(props.settingConfData.documentId);
-  let yearDocumentId = "";
-  const yearFile = fileList.find((file: any) => file.name === `${year}.sy` || file.name === year);
-  if (yearFile) yearDocumentId = yearFile.id;
-  if (!yearDocumentId) {
-    yearDocumentId = await createDoc(year, props.settingConfData.documentId);
-  }
-
-  const { id: tableBlockId, markdown: tableBlockMarkdown } = await getTableBlockByDocId(yearDocumentId);
-  const tableLines = tableBlockMarkdown
-    .split("\n")
-    .map(line => line.trimEnd())
-    .filter(line => line.startsWith("|") && line.endsWith("|"));
-
-  let nextTableMarkdown: string;
-  if (tableLines.length < 2) {
-    nextTableMarkdown = `${config2TableMDHeader(props.settingConfData.config)}\n${json2TableMDBody([ledgerData])}`;
-  } else {
-    const headerLines = tableLines.slice(0, 2);
-    const bodyLines = tableLines.slice(2);
-    const nextRows = json2TableMDBody([ledgerData]).split("\n").filter(Boolean);
-    const isTargetRow = (line: string) => {
-      const cols = line.slice(1, -1).split("|").map(cell => cell.trim());
-      return cols[0] === (originLedgerData.time || "") && cols[1] === originLedgerData.name;
-    };
-    const matchedIndex = bodyLines.findIndex(isTargetRow);
-    const beforeLines = matchedIndex >= 0 ? bodyLines.slice(0, matchedIndex) : bodyLines;
-    const afterLines = matchedIndex >= 0 ? bodyLines.slice(matchedIndex).filter(line => !isTargetRow(line)) : [];
-    nextTableMarkdown = [...headerLines, ...beforeLines, ...nextRows, ...afterLines].join("\n");
-  }
-
-  await updateBlockContent(tableBlockId, nextTableMarkdown);
-  await blockDocument(yearDocumentId);
-}
-
-async function saveBookkeepingRecord(record: BookkeepingRecord & { blockId?: string; documentId?: string; createdAt?: string; displayTime?: string }): Promise<TimelineRecord | undefined> {
-  const settingConf = props.settingConfData;
-  if (!settingConf.bookkeepingDocumentId) {
-    showMessage("请先配置记账数据存放位置", 2000, "error");
-    return undefined;
-  }
-
-  const blockMarkdown = recordToMarkdown(record);
-  const now = await getCurrentDateTime();
-  if (record.blockId) {
-    const targetDocumentId = record.documentId ? await getBookkeepingTargetDocumentId(record, settingConf) : "";
-    if (targetDocumentId && record.documentId && targetDocumentId !== record.documentId) {
-      const blockId = await insertMarkdownBlock(targetDocumentId, blockMarkdown);
-      const pledgeData = {
-        ...record,
-        month: record.date.slice(0, 7),
-        storageMode: settingConf.bookkeepingStorageMode,
-        documentId: targetDocumentId,
-        blockId,
-        createdAt: record.createdAt || now.iso,
-        displayTime: record.displayTime || now.time,
-      };
-      const isAttrSaved = await setBlockAttrs(blockId, {
-        "custom-pledge": JSON.stringify(pledgeData),
-      });
-
-      if (!isAttrSaved) {
-        await deleteBlock(blockId);
-        showMessage("记账已移动，属性写入失败", 3000, "error");
-        return undefined;
-      }
-
-      await deleteBlock(record.blockId);
-      showMessage("记账修改成功", 2000, "info");
-      return toTimelineRecord(pledgeData);
-    }
-
-    await updateBlockContent(record.blockId, blockMarkdown);
-    const pledgeData = {
-      ...record,
-      month: record.date.slice(0, 7),
-      storageMode: settingConf.bookkeepingStorageMode,
-      documentId: record.documentId,
-      blockId: record.blockId,
-      createdAt: record.createdAt || now.iso,
-      displayTime: record.displayTime || now.time,
-    };
-    const isAttrSaved = await setBlockAttrs(record.blockId, {
-      "custom-pledge": JSON.stringify(pledgeData),
-    });
-    if (isAttrSaved) {
-      showMessage("记账修改成功", 2000, "info");
-      return toTimelineRecord(pledgeData);
-    }
-    showMessage("记账已修改，属性写入失败", 3000, "error");
-    return undefined;
-  }
-
-  let targetDocumentId = "";
-  if (settingConf.bookkeepingStorageMode === "central") {
-    targetDocumentId = await getCentralBookkeepingDocumentId(record, settingConf);
-  } else if (settingConf.bookkeepingStorageMode === "date") {
-    targetDocumentId = await getDailyBookkeepingDocumentId(record, settingConf);
-  } else {
-    showMessage("未知的记账存放方式", 2000, "error");
-    return undefined;
-  }
-
-  if (!targetDocumentId) {
-    showMessage("未找到记账写入文档", 2000, "error");
-    return undefined;
-  }
-
-  const blockId = await insertMarkdownBlock(targetDocumentId, blockMarkdown);
-  const pledgeData = {
-    ...record,
-    month: record.date.slice(0, 7),
-    storageMode: settingConf.bookkeepingStorageMode,
-    documentId: targetDocumentId,
-    blockId,
-    createdAt: now.iso,
-    displayTime: now.time,
-  };
-  const isAttrSaved = await setBlockAttrs(blockId, {
-    "custom-pledge": JSON.stringify(pledgeData),
-  });
-
-  if (isAttrSaved) {
-    showMessage("记账保存成功", 2000, "info");
-    return toTimelineRecord(pledgeData);
-  }
-
-  showMessage("记账已写入，属性写入失败", 3000, "error");
-  return undefined;
-}
-
-async function getBookkeepingTargetDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
-  if (settingConf.bookkeepingStorageMode === "central") {
-    return getCentralBookkeepingDocumentId(record, settingConf);
-  }
-  if (settingConf.bookkeepingStorageMode === "date") {
-    return getDailyBookkeepingDocumentId(record, settingConf);
-  }
-  return "";
+  return false;
 }
 
 async function deleteBookkeepingRecord(record: TimelineRecord): Promise<boolean> {
@@ -725,7 +559,7 @@ async function deleteBookkeepingRecord(record: TimelineRecord): Promise<boolean>
     return false;
   }
 
-  const isDeleted = await deleteBlock(record.blockId);
+  const isDeleted = await deleteBookkeepingRecordService(record.blockId);
   if (!isDeleted) {
     showMessage("记账删除失败", 2000, "error");
     return false;
@@ -734,52 +568,6 @@ async function deleteBookkeepingRecord(record: TimelineRecord): Promise<boolean>
   bookkeepingRecords.value = bookkeepingRecords.value.filter(item => item.id !== record.id);
   showMessage("记账删除成功", 2000, "info");
   return true;
-}
-
-async function getCentralBookkeepingDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
-  const monthTitle = record.date.slice(0, 7);
-  const fileList = await getFileTreeById(settingConf.bookkeepingDocumentId);
-  const monthFile = fileList.find((file: any) => file.name === `${monthTitle}.sy` || file.name === monthTitle);
-  if (monthFile) return monthFile.id;
-  return createDoc(monthTitle, settingConf.bookkeepingDocumentId);
-}
-
-async function getDailyBookkeepingDocumentId(record: BookkeepingRecord, settingConf: SettingConfig): Promise<string> {
-  const notebookId = settingConf.bookkeepingDocumentId;
-  if (!notebookId) return "";
-
-  const notebookConf = await getNotebookConf(notebookId);
-  const dailyNoteSavePath = notebookConf?.conf?.dailyNoteSavePath;
-  if (!dailyNoteSavePath) {
-    showMessage("未读取到新建日记路径配置", 3000, "error");
-    return "";
-  }
-
-  const dailyNotePath = renderDailyNotePath(dailyNoteSavePath, record.date);
-  if (!dailyNotePath) {
-    showMessage("暂不支持当前新建日记路径模板", 3000, "error");
-    return "";
-  }
-
-  const ids = await getIDsByHPath(notebookId, dailyNotePath);
-  if (ids.length > 0) return ids[0];
-  return createDocWithMdByHPath(notebookId, dailyNotePath, "");
-}
-
-async function getAssetLedgerListByDateRange(rangeStartDate: string, rangeEndDate: string): Promise<LedgerItem[]> {
-  if (getRequiredSettingMessage(props.settingConfData, "asset")) return [];
-
-  const yearDocs = await getYearDocs(props.settingConfData.documentId);
-  if (!yearDocs) return [];
-
-  const data: LedgerItem[] = [];
-  for (let year = Number(rangeStartDate.split("-")[0]); year <= Number(rangeEndDate.split("-")[0]); year++) {
-    const yearDoc = yearDocs.find(item => item.name.replace(".sy", "") === String(year));
-    if (!yearDoc) continue;
-    const accountList = await getLedgerListByYearDocId(yearDoc.id, props.settingConfData);
-    data.push(...accountList.filter(item => item.time && item.time >= rangeStartDate && item.time <= rangeEndDate));
-  }
-  return data;
 }
 
 function toTimelineRecord(
@@ -983,42 +771,6 @@ function getMonthRange(month: string) {
 
 function getCurrentSystemDateObj(): Date {
   return currentSystemDate.value ? parseDate(currentSystemDate.value) : new Date();
-}
-
-function renderDailyNotePath(template: string, date: string): string {
-  const dateObj = new Date(`${date}T00:00:00`);
-  const renderedPath = template.replace(
-    /{{\s*now\s*\|\s*date\s+["']([^"']+)["']\s*}}/g,
-    (_match, layout: string) => formatGoDateLayout(dateObj, layout),
-  );
-  if (renderedPath.includes("{{")) return "";
-  return renderedPath.startsWith("/") ? renderedPath : `/${renderedPath}`;
-}
-
-function formatGoDateLayout(date: Date, layout: string): string {
-  const pad = (num: number) => String(num).padStart(2, "0");
-  const tokenMap: Record<string, string> = {
-    "2006": String(date.getFullYear()),
-    "1": String(date.getMonth() + 1),
-    "01": pad(date.getMonth() + 1),
-    "2": String(date.getDate()),
-    "02": pad(date.getDate()),
-    "15": pad(date.getHours()),
-    "04": pad(date.getMinutes()),
-    "05": pad(date.getSeconds()),
-  };
-  return layout.replace(/2006|01|02|15|04|05|1|2/g, token => tokenMap[token]);
-}
-
-function recordToMarkdown(record: BookkeepingRecord): string {
-  return [
-    record.date,
-    record.parentName,
-    record.childName,
-    record.type === "expense" ? "支出" : "收入",
-    record.amount.toFixed(2),
-    record.remark || "",
-  ].join("|");
 }
 
 function getRateDiff(currentValue: number, previousValue: number): number {
