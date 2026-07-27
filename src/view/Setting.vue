@@ -273,7 +273,6 @@ function getIconPreview(symbol: string): string {
 .pl-setting-sidebar {
   width: 10rem;
   flex-shrink: 0;
-  background-color: var(--pl-color-surface);
   border-radius: 0.5rem;
 }
 

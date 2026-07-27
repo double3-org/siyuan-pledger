@@ -337,7 +337,7 @@ const bookkeepingTrendData = computed(() => {
     const key = bookkeepingTrendMode.value === "day" ? record.date : record.date.slice(0, 7);
     const amount = amountMap.get(key);
     if (!amount) continue;
-    amount[record.type] += Math.abs(Number(record.amount) || 0);
+    amount[record.type] = currency(amount[record.type]).add(Math.abs(Number(record.amount) || 0)).value;
   }
 
   const income = keys.map(key => amountMap.get(key)?.income || 0);
@@ -347,7 +347,7 @@ const bookkeepingTrendData = computed(() => {
     labels: keys.map(key => bookkeepingTrendMode.value === "day" ? key.slice(5) : formatBookkeepingTrendMonthLabel(key)),
     income,
     expense,
-    balance: keys.map((_, index) => income[index] - expense[index]),
+    balance: keys.map((_, index) => currency(income[index]).subtract(expense[index]).value),
   };
 });
 
@@ -750,6 +750,7 @@ function renderBookkeepingTrendChart() {
       backgroundColor: themeColors.background,
       borderColor: themeColors.border,
       textStyle: { color: themeColors.text },
+      valueFormatter: (value: string | number) => formatBookkeepingAmount(value),
     },
     legend: {
       top: 16,
