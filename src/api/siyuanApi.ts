@@ -300,15 +300,20 @@ export async function getBookkeepingRecordsByPledge(
 ): Promise<(BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[]> {
   if (storageMode !== "central" && storageMode !== "date") return [];
 
-  const sql = `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%'`;
-  const resp = await executeSql(sql);
+  const pageSize = 1024;
+  const attributeRows: { block_id: string; value: string }[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    // 思源会将未指定 LIMIT 的 SQL 默认截断为 64 行，因此必须显式分页读取。
+    const sql = `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%' ORDER BY block_id ASC LIMIT ${pageSize} OFFSET ${offset}`;
+    const resp = await executeSql(sql);
+    if (!resp || resp.code !== 0 || !Array.isArray(resp.data)) return [];
 
-  if (!resp || resp.code !== 0 || !Array.isArray(resp.data)) {
-    return [];
+    attributeRows.push(...resp.data);
+    if (resp.data.length < pageSize) break;
   }
 
   const records: (BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[] = [];
-  for (const item of resp.data) {
+  for (const item of attributeRows) {
     try {
       const data = JSON.parse(item.value);
       if (!data?.date || !data?.parentName || !data?.childName) continue;

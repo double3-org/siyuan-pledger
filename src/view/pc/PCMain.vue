@@ -24,7 +24,7 @@
                 自定义
               </label>
             </div>
-            <div class="tab-content" style="flex: 1;">
+            <div class="pl-tab-content" style="flex: 1;">
               <!-- 第一个 div 必须有, 占位 -->
               <div></div>
               <div>
@@ -39,7 +39,7 @@
           </div>
 
           <!-- 自定义范围选择 -->
-          <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
+          <div class="pl-tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
           </div>
         </div>
         <div class="pl-pc-chart">
@@ -103,7 +103,7 @@
                 自定义
               </label>
             </div>
-            <div class="tab-content" style="flex: 1;">
+            <div class="pl-tab-content" style="flex: 1;">
               <div></div>
               <div>
                 <div class="pl-pc-search">
@@ -116,7 +116,7 @@
             </div>
           </div>
 
-          <div class="tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
+          <div class="pl-tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
           </div>
         </div>
 

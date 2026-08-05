@@ -1,4 +1,4 @@
-import "./utils/safe-custom-elements-patch ";
+import "./utils/cally-registration-guard";
 import "cally";
 import {
   Plugin,
@@ -58,7 +58,7 @@ export default class PersonalLedgerPlug extends Plugin {
       type: "pLedgerMobileDock",
       init() {
         const element = this.element as HTMLElement;
-        element.classList.add("pl-mobile-dock");
+        element.classList.add("pl-mobile-dock", "pl-pledger-root");
         plugin.unmountMobileDockView();
         plugin.mobileDockView = createApp(MobileView, {
           settingConfData: settingConfData.value,
@@ -115,12 +115,14 @@ export default class PersonalLedgerPlug extends Plugin {
       return;
     }
 
-    let dialog = new Dialog({
+    const settingPanelId = `pledger-setting-panel-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    let settingView: ReturnType<typeof createApp> | null = null;
+    const dialog = new Dialog({
       title: "pLedger 插件设置",
-      content: `<div id="SettingPanel" style="height: 100%;"></div>`,
+      content: `<div id="${settingPanelId}" class="pl-pledger-root" style="height: 100%;"></div>`,
       width: "960px",
       destroyCallback: () => {
-        settingView.unmount();
+        settingView?.unmount();
       },
     });
 
@@ -145,13 +147,19 @@ export default class PersonalLedgerPlug extends Plugin {
       closeSetting();
     }
 
-    const settingView = createApp(SettingView, {
+    const settingPanel = document.getElementById(settingPanelId);
+    if (!settingPanel) {
+      dialog.destroy();
+      return;
+    }
+
+    settingView = createApp(SettingView, {
       closeSetting,
       saveSetting,
       settingConfData: settingConfData.value,
     });
 
-    settingView.mount("#SettingPanel");
+    settingView.mount(settingPanel);
   }
 
   // 打开 tab
@@ -170,6 +178,7 @@ export default class PersonalLedgerPlug extends Plugin {
       this.addTab({
         type: id,
         init() {
+          this.element.classList.add("pl-pledger-root");
           const mainView = createApp(MainView, {
             settingConfData: settingConfData.value,
           });

@@ -1,5 +1,5 @@
 <template>
-  <div class="pl-bookkeeping-edit-main">
+  <div class="pl-bookkeeping-edit-main" @keydown="onKeydown">
     <section class="pl-bookkeeping-hero">
       <div class="pl-bookkeeping-type-tabs">
         <label :class="{ active: bookkeepingType === 'expense' }">
@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import currency from "currency.js";
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { showMessage } from 'siyuan';
 import { getCurrentTime } from "@/api/siyuanApi"
 import DatePicker from "@/components/custom/DatePicker.vue";
@@ -383,9 +383,7 @@ onMounted(() => {
   } else {
     getCurrentTime().then(res => selectedDate.value = res);
   }
-  window.addEventListener("keydown", onKeydown);
 });
-onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 function formatAmount(value: number): string {
   const fixed = value.toFixed(2);
