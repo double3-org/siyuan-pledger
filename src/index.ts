@@ -175,12 +175,20 @@ export default class PersonalLedgerPlug extends Plugin {
       });
     } else {
       const id = "pLedgerPluginTab";
+      const plugin = this;
       this.addTab({
         type: id,
         init() {
           this.element.classList.add("pl-pledger-root");
           const mainView = createApp(MainView, {
             settingConfData: settingConfData.value,
+            openBlock(blockId: string) {
+              void openTab({
+                app: plugin.app,
+                doc: { id: blockId },
+                openNewTab: true,
+              });
+            },
           });
           mainView.mount(this.element);
         },

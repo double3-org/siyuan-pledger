@@ -173,6 +173,17 @@ export async function getNotebookConf(notebook: string): Promise<any> {
   return resp.data;
 }
 
+/** 获取全部笔记本的 ID 和名称，用于展示数据所在位置。 */
+export async function getNotebookList(): Promise<{ id: string; name: string }[]> {
+  const resp = await postSiyuanApi("/api/notebook/lsNotebooks");
+  if (!resp || resp.code !== 0 || !Array.isArray(resp.data?.notebooks)) {
+    throw new Error("读取笔记本列表失败");
+  }
+  return resp.data.notebooks
+    .filter((item: { id?: unknown; name?: unknown }) => typeof item?.id === "string" && typeof item?.name === "string")
+    .map((item: { id: string; name: string }) => ({ id: item.id, name: item.name }));
+}
+
 /**
  * 根据文档id, 获取第一个表格块信息, 包含 id 和 markdown
  * SELECT id,markdown FROM blocks WHERE root_id = '20251225201147-xfwjyyj' AND type = 't' limit 1
@@ -291,6 +302,39 @@ export async function setBlockAttrs(
   return resp?.code === 0;
 }
 
+export type PledgeAttributeRow = {
+  block_id: string;
+  value: string;
+  actual_document_id?: string;
+  actual_notebook_id?: string;
+  actual_path?: string;
+  actual_hpath?: string;
+  actual_content?: string;
+};
+
+/** 分页读取 pledge 属性，可按存放方式筛选，也可用于全量数据扫描。 */
+export async function getPledgeAttributeRows(storageMode?: "central" | "date"): Promise<PledgeAttributeRow[]> {
+  const pageSize = 1024;
+  const rows: PledgeAttributeRow[] = [];
+  const storageModeSql = storageMode
+    ? ` AND a.value LIKE '%"storageMode":"${storageMode}"%'`
+    : "";
+
+  for (let offset = 0; ; offset += pageSize) {
+    // 思源会将未指定 LIMIT 的 SQL 默认截断为 64 行，因此必须显式分页读取。
+    const sql = `SELECT a.block_id,a.value,b.root_id AS actual_document_id,b.box AS actual_notebook_id,b.path AS actual_path,b.hpath AS actual_hpath,COALESCE(b.markdown,b.content,'') AS actual_content FROM attributes a LEFT JOIN blocks b ON b.id = a.block_id WHERE a.name = 'custom-pledge'${storageModeSql} ORDER BY a.block_id ASC LIMIT ${pageSize} OFFSET ${offset}`;
+    const resp = await executeSql(sql);
+    if (!resp || resp.code !== 0 || !Array.isArray(resp.data)) {
+      throw new Error("读取记账属性失败");
+    }
+
+    rows.push(...resp.data);
+    if (resp.data.length < pageSize) break;
+  }
+
+  return rows;
+}
+
 /**
  * 通过块自定义属性读取记账记录 /api/query/sql
  */
@@ -298,19 +342,14 @@ export async function getBookkeepingRecordsByPledge(
   storageMode?: string,
   storageRootId?: string,
 ): Promise<(BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[]> {
-  if (storageMode !== "central" && storageMode !== "date") return [];
-
-  const pageSize = 1024;
-  const attributeRows: { block_id: string; value: string }[] = [];
-  for (let offset = 0; ; offset += pageSize) {
-    // 思源会将未指定 LIMIT 的 SQL 默认截断为 64 行，因此必须显式分页读取。
-    const sql = `SELECT block_id,value FROM attributes WHERE name = 'custom-pledge' AND value LIKE '%"storageMode":"${storageMode}"%' ORDER BY block_id ASC LIMIT ${pageSize} OFFSET ${offset}`;
-    const resp = await executeSql(sql);
-    if (!resp || resp.code !== 0 || !Array.isArray(resp.data)) return [];
-
-    attributeRows.push(...resp.data);
-    if (resp.data.length < pageSize) break;
+  if (storageMode !== "central" && storageMode !== "date") {
+    throw new Error("记账存放方式无效");
   }
+
+  const rootId = storageRootId?.trim();
+  if (!rootId) throw new Error("记账数据存放位置为空");
+
+  const attributeRows = await getPledgeAttributeRows(storageMode);
 
   const records: (BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[] = [];
   for (const item of attributeRows) {
@@ -325,8 +364,9 @@ export async function getBookkeepingRecordsByPledge(
         amount: Number(data.amount) || 0,
         remark: data.remark || "",
         ...(data.storageRootId ? { storageRootId: data.storageRootId } : {}),
-        blockId: data.blockId || item.block_id,
-        ...(data.documentId ? { documentId: data.documentId } : {}),
+        // 属性中的 ID 可能因移动或历史数据而失真，运行时始终使用数据库中的真实 ID。
+        blockId: item.block_id,
+        ...(item.actual_document_id ? { documentId: item.actual_document_id } : {}),
         ...(data.displayTime ? { displayTime: data.displayTime } : {}),
         ...(data.createdAt ? { createdAt: data.createdAt } : {}),
       });
@@ -335,49 +375,43 @@ export async function getBookkeepingRecordsByPledge(
     }
   }
 
-  if (storageRootId?.trim()) {
-    const rootId = storageRootId.trim();
-    const rootLocation = storageMode === "central"
-      ? await getPathAndNoteId(rootId)
-      : undefined;
-    const rootPath = rootLocation?.path.replace(/\/+$/, "") || "";
-    const locationCache = new Map<string, { notebook: string; path: string }>();
-    const scopedRecords: typeof records = [];
-
-    for (const record of records) {
-      if (record.storageRootId) {
-        if (record.storageRootId === rootId) scopedRecords.push(record);
-        continue;
-      }
-
-      // 兼容历史记录：旧属性没有 storageRootId 时，通过文档位置判断归属。
-      if (!record.documentId) continue;
-      let location = locationCache.get(record.documentId);
-      if (!location) {
-        location = await getPathAndNoteId(record.documentId);
-        locationCache.set(record.documentId, location);
-      }
-      if (!location.notebook) continue;
-
-      if (storageMode === "date") {
-        if (location.notebook === rootId) scopedRecords.push(record);
-        continue;
-      }
-
-      if (
-        rootLocation?.notebook
-        && rootPath
-        && location.notebook === rootLocation.notebook
-        && (location.path === rootPath || location.path.startsWith(`${rootPath}/`))
-      ) {
-        scopedRecords.push(record);
-      }
-    }
-
-    return scopedRecords.sort((a, b) => b.date.localeCompare(a.date));
+  const rootLocation = storageMode === "central"
+    ? await getPathAndNoteId(rootId)
+    : undefined;
+  if (storageMode === "central" && (!rootLocation?.notebook || !rootLocation.path)) {
+    throw new Error("集中存放位置无效或无法访问");
+  }
+  if (storageMode === "date" && !(await getNotebookConf(rootId))) {
+    throw new Error("按日期存放的笔记本无效或无法访问");
   }
 
-  return records.sort((a, b) => b.date.localeCompare(a.date));
+  const rootPath = rootLocation?.path.replace(/\/+$/, "") || "";
+  const locationCache = new Map<string, { notebook: string; path: string }>();
+  const scopedRecords: typeof records = [];
+
+  for (const record of records) {
+    if (!record.documentId) continue;
+    let location = locationCache.get(record.documentId);
+    if (!location) {
+      location = await getPathAndNoteId(record.documentId);
+      locationCache.set(record.documentId, location);
+    }
+    if (!location.notebook) continue;
+
+    if (storageMode === "date") {
+      if (location.notebook === rootId) scopedRecords.push(record);
+      continue;
+    }
+
+    if (
+      location.notebook === rootLocation?.notebook
+      && (location.path === rootPath || location.path.startsWith(`${rootPath}/`))
+    ) {
+      scopedRecords.push(record);
+    }
+  }
+
+  return scopedRecords.sort((a, b) => b.date.localeCompare(a.date));
 }
 
 /**

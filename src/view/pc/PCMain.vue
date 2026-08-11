@@ -80,7 +80,7 @@
       </div>
     </template>
 
-    <template v-else>
+    <template v-else-if="activePage === 'bookkeeping'">
       <!-- 左侧 -->
       <div class="pl-pc-main-left">
         <BookkeepingLatest :settingConfData="settingConfData" :activePage="activePage" @changePage="changePage"
@@ -114,6 +114,10 @@
                 </div>
               </div>
             </div>
+            <button class="pl-button pl-pc-maintenance-button" @click="openDataMaintenance">
+              <svg><use xlink:href="#iconD3DB"></use></svg>
+              数据维护
+            </button>
           </div>
 
           <div class="pl-tab-content card bg-base-100 card-border border-base-300 w-full mt-2 py-2 px-4">
@@ -210,6 +214,15 @@
         </div>
       </div>
     </template>
+
+    <template v-else>
+      <div class="pl-pc-maintenance-page">
+        <div class="pl-pc-maintenance-toolbar">
+          <button class="pl-button" @click="closeDataMaintenance">返回{{ previousPage === "asset" ? "资产" : "记账" }}</button>
+        </div>
+        <DataMaintenance :setting-conf-data="settingConfData" :open-block="openBlock" />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -232,6 +245,7 @@ import Compare from '@/components/bi/Compare.vue';
 import Plan from '@/components/bi/Plan.vue';
 import Table from '@/components/bi/Table.vue';
 import DatePicker from '@/components/custom/DatePicker.vue';
+import DataMaintenance from '@/components/DataMaintenance.vue';
 import { getAssetLedgerListByDateRange } from '@/services/assetLedgerService';
 import { getPluginThemeColors, observeThemeChange } from '@/utils/theme-utils';
 
@@ -246,7 +260,8 @@ echarts.use([
 ]);
 
 const props = defineProps<{
-  settingConfData: SettingConfig // 配置数据
+  settingConfData: SettingConfig, // 配置数据
+  openBlock: (blockId: string) => void
 }>();
 
 type BookkeepingTrendMode = "day" | "month";
@@ -457,11 +472,25 @@ let stopObservingTheme: (() => void) | null = null;
 let observedBookkeepingTrendEl: HTMLElement | null = null;
 let observedBookkeepingCategoryEl: HTMLElement | null = null;
 
-const activePage = ref<"asset" | "bookkeeping">("bookkeeping");
+const activePage = ref<"asset" | "bookkeeping" | "maintenance">("bookkeeping");
+const previousPage = ref<"asset" | "bookkeeping">("bookkeeping");
 
 // 切换资产/记账页面
 const changePage = (page: "asset" | "bookkeeping") => {
   activePage.value = page;
+}
+
+function openDataMaintenance() {
+  if (activePage.value !== "maintenance") previousPage.value = activePage.value;
+  activePage.value = "maintenance";
+}
+
+function closeDataMaintenance() {
+  activePage.value = previousPage.value;
+}
+
+function openBlock(blockId: string) {
+  props.openBlock(blockId);
 }
 
 watch(activePage, async (page) => {
@@ -1045,6 +1074,17 @@ const onTabChange = (e: any) => {
   grid-column: span 5 / span 5;
 }
 
+.pl-pc-maintenance-page {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.pl-pc-maintenance-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
 .pl-pc-search {
   display: flex;
   padding-left: 1rem;
@@ -1062,6 +1102,21 @@ const onTabChange = (e: any) => {
   background-color: var(--pl-color-primary);
   border-color: var(--pl-color-primary);
   filter: brightness(0.9);
+}
+
+.pl-button.pl-pc-maintenance-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  color: var(--pl-color-text);
+  background: var(--pl-color-surface);
+  border-color: var(--pl-color-border);
+}
+
+.pl-button.pl-pc-maintenance-button:hover {
+  color: var(--pl-color-primary);
+  border-color: var(--pl-color-primary);
 }
 
 .pl-pc-chart {

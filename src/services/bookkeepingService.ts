@@ -23,14 +23,54 @@ export type StoredBookkeepingRecord = BookkeepingRecord & {
   storageMode?: string;
 };
 
+export type LoadBookkeepingRecordsResult = {
+  records: StoredBookkeepingRecord[];
+  error?: string;
+};
+
+/** 只持久化记账业务和定位所需字段，避免把页面使用的 id、icon 等临时字段写入属性。 */
+function createStoredBookkeepingRecord(
+  record: StoredBookkeepingRecord,
+  setting: SettingConfig,
+  blockId: string,
+  documentId: string | undefined,
+  createdAt: string,
+  displayTime: string,
+): StoredBookkeepingRecord {
+  return {
+    type: record.type,
+    date: record.date,
+    parentName: record.parentName,
+    childName: record.childName,
+    amount: Number(record.amount),
+    remark: record.remark || "",
+    month: record.date.slice(0, 7),
+    storageMode: setting.bookkeepingStorageMode,
+    storageRootId: setting.bookkeepingDocumentId,
+    ...(documentId ? { documentId } : {}),
+    blockId,
+    createdAt,
+    displayTime,
+  };
+}
+
 /** 读取当前配置对应的记账记录。 */
 export async function loadBookkeepingRecords(
   setting: SettingConfig,
-): Promise<StoredBookkeepingRecord[]> {
-  return getBookkeepingRecordsByPledge(
-    setting.bookkeepingStorageMode,
-    setting.bookkeepingDocumentId,
-  );
+): Promise<LoadBookkeepingRecordsResult> {
+  try {
+    const records = await getBookkeepingRecordsByPledge(
+      setting.bookkeepingStorageMode,
+      setting.bookkeepingDocumentId,
+    );
+    return { records };
+  } catch (error) {
+    console.error("读取记账记录失败", error);
+    return {
+      records: [],
+      error: error instanceof Error ? error.message : "记账数据读取失败",
+    };
+  }
 }
 
 /** 删除记账块，页面层负责更新列表和提示信息。 */
@@ -47,6 +87,7 @@ export async function saveBookkeepingRecord(
   record: StoredBookkeepingRecord,
   setting: SettingConfig,
   previousRecord?: StoredBookkeepingRecord,
+  options: { silent?: boolean } = {},
 ): Promise<StoredBookkeepingRecord | undefined> {
   let insertedBlockId = "";
   let updatedBlockId = "";
@@ -76,7 +117,7 @@ export async function saveBookkeepingRecord(
 
   try {
     if (!setting.bookkeepingDocumentId) {
-      showMessage("请先配置记账数据存放位置", 2000, "error");
+      notify(options.silent, "请先配置记账数据存放位置", 2000, "error");
       return undefined;
     }
 
@@ -85,7 +126,7 @@ export async function saveBookkeepingRecord(
 
     if (record.blockId) {
       const targetDocumentId = record.documentId
-        ? await getBookkeepingTargetDocumentId(record, setting)
+        ? await getBookkeepingTargetDocumentId(record, setting, options.silent)
         : "";
 
       if (targetDocumentId && record.documentId && targetDocumentId !== record.documentId) {
@@ -93,34 +134,32 @@ export async function saveBookkeepingRecord(
         if (!blockId) throw new Error("插入记账块失败");
         insertedBlockId = blockId;
 
-        const pledgeData: StoredBookkeepingRecord = {
-          ...record,
-          month: record.date.slice(0, 7),
-          storageMode: setting.bookkeepingStorageMode,
-          storageRootId: setting.bookkeepingDocumentId,
-          documentId: targetDocumentId,
+        const pledgeData = createStoredBookkeepingRecord(
+          record,
+          setting,
           blockId,
-          createdAt: record.createdAt || now.iso,
-          displayTime: record.displayTime || now.time,
-        };
+          targetDocumentId,
+          record.createdAt || now.iso,
+          record.displayTime || now.time,
+        );
         const isAttrSaved = await setBlockAttrs(blockId, {
           "custom-pledge": JSON.stringify(pledgeData),
         });
 
         if (!isAttrSaved) {
           await rollbackInsertedBlock();
-          showMessage("记账移动失败，原记录未修改", 3000, "error");
+          notify(options.silent, "记账移动失败，原记录未修改", 3000, "error");
           return undefined;
         }
 
         if (!(await deleteBlock(record.blockId))) {
           await rollbackInsertedBlock();
-          showMessage("记账移动失败，原记录未修改", 3000, "error");
+          notify(options.silent, "记账移动失败，原记录未修改", 3000, "error");
           return undefined;
         }
 
         insertedBlockId = "";
-        showMessage("记账修改成功", 2000, "info");
+        notify(options.silent, "记账修改成功", 2000, "info");
         return pledgeData;
       }
 
@@ -129,34 +168,32 @@ export async function saveBookkeepingRecord(
         throw new Error("更新记账块失败");
       }
 
-      const pledgeData: StoredBookkeepingRecord = {
-        ...record,
-        month: record.date.slice(0, 7),
-        storageMode: setting.bookkeepingStorageMode,
-        storageRootId: setting.bookkeepingDocumentId,
-        documentId: record.documentId,
-        blockId: record.blockId,
-        createdAt: record.createdAt || now.iso,
-        displayTime: record.displayTime || now.time,
-      };
+      const pledgeData = createStoredBookkeepingRecord(
+        record,
+        setting,
+        record.blockId,
+        record.documentId,
+        record.createdAt || now.iso,
+        record.displayTime || now.time,
+      );
       const isAttrSaved = await setBlockAttrs(record.blockId, {
         "custom-pledge": JSON.stringify(pledgeData),
       });
 
       if (!isAttrSaved) {
         await rollbackUpdatedBlock();
-        showMessage("记账修改失败，原记录未修改", 3000, "error");
+        notify(options.silent, "记账修改失败，原记录未修改", 3000, "error");
         return undefined;
       }
 
       updatedBlockId = "";
-      showMessage("记账修改成功", 2000, "info");
+      notify(options.silent, "记账修改成功", 2000, "info");
       return pledgeData;
     }
 
-    const targetDocumentId = await getBookkeepingTargetDocumentId(record, setting);
+    const targetDocumentId = await getBookkeepingTargetDocumentId(record, setting, options.silent);
     if (!targetDocumentId) {
-      showMessage("未找到记账写入文档", 2000, "error");
+      notify(options.silent, "未找到记账写入文档", 2000, "error");
       return undefined;
     }
 
@@ -164,34 +201,32 @@ export async function saveBookkeepingRecord(
     if (!blockId) throw new Error("插入记账块失败");
     insertedBlockId = blockId;
 
-    const pledgeData: StoredBookkeepingRecord = {
-      ...record,
-      month: record.date.slice(0, 7),
-      storageMode: setting.bookkeepingStorageMode,
-      storageRootId: setting.bookkeepingDocumentId,
-      documentId: targetDocumentId,
+    const pledgeData = createStoredBookkeepingRecord(
+      record,
+      setting,
       blockId,
-      createdAt: now.iso,
-      displayTime: now.time,
-    };
+      targetDocumentId,
+      record.createdAt || now.iso,
+      record.displayTime || now.time,
+    );
     const isAttrSaved = await setBlockAttrs(blockId, {
       "custom-pledge": JSON.stringify(pledgeData),
     });
 
     if (!isAttrSaved) {
       await rollbackInsertedBlock();
-      showMessage("记账保存失败，未留下半成品记录", 3000, "error");
+      notify(options.silent, "记账保存失败，未留下半成品记录", 3000, "error");
       return undefined;
     }
 
     insertedBlockId = "";
-    showMessage("记账保存成功", 2000, "info");
+    notify(options.silent, "记账保存成功", 2000, "info");
     return pledgeData;
   } catch (error) {
     await rollbackInsertedBlock();
     await rollbackUpdatedBlock();
     console.error("保存记账记录失败", error);
-    showMessage("记账保存失败，原记录可能需要检查", 3000, "error");
+    notify(options.silent, "记账保存失败，原记录可能需要检查", 3000, "error");
     return undefined;
   }
 }
@@ -199,15 +234,16 @@ export async function saveBookkeepingRecord(
 async function getBookkeepingTargetDocumentId(
   record: BookkeepingRecord,
   setting: SettingConfig,
+  silent = false,
 ): Promise<string> {
   if (setting.bookkeepingStorageMode === "central") {
     return getCentralBookkeepingDocumentId(record, setting);
   }
   if (setting.bookkeepingStorageMode === "date") {
-    return getDailyBookkeepingDocumentId(record, setting);
+    return getDailyBookkeepingDocumentId(record, setting, silent);
   }
 
-  showMessage("未知的记账存放方式", 2000, "error");
+  notify(silent, "未知的记账存放方式", 2000, "error");
   return "";
 }
 
@@ -225,6 +261,7 @@ async function getCentralBookkeepingDocumentId(
 async function getDailyBookkeepingDocumentId(
   record: BookkeepingRecord,
   setting: SettingConfig,
+  silent = false,
 ): Promise<string> {
   const notebookId = setting.bookkeepingDocumentId;
   if (!notebookId) return "";
@@ -232,13 +269,13 @@ async function getDailyBookkeepingDocumentId(
   const notebookConf = await getNotebookConf(notebookId);
   const dailyNoteSavePath = notebookConf?.conf?.dailyNoteSavePath;
   if (!dailyNoteSavePath) {
-    showMessage("未读取到新建日记路径配置", 3000, "error");
+    notify(silent, "未读取到新建日记路径配置", 3000, "error");
     return "";
   }
 
   const dailyNotePath = renderDailyNotePath(dailyNoteSavePath, record.date);
   if (!dailyNotePath) {
-    showMessage("暂不支持当前新建日记路径模板", 3000, "error");
+    notify(silent, "暂不支持当前新建日记路径模板", 3000, "error");
     return "";
   }
 
@@ -281,4 +318,13 @@ function recordToMarkdown(record: BookkeepingRecord): string {
     record.amount.toFixed(2),
     record.remark || "",
   ].map(escapeMarkdownTableCell).join("|");
+}
+
+function notify(
+  silent: boolean | undefined,
+  message: string,
+  timeout: number,
+  type: "info" | "error",
+) {
+  if (!silent) showMessage(message, timeout, type);
 }
