@@ -1,4 +1,4 @@
-:root {
+.pl-pledger-root {
   --pl-color-background: var(--b3-theme-background, #fff);
   --pl-color-surface: var(--b3-theme-surface, #f3f3f3);
   --pl-color-surface-light: var(--b3-theme-surface-light, #f7f7f7);
@@ -13,12 +13,12 @@
   --pl-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
 }
 
-.pl-mobile-dock {
+.pl-pledger-root.pl-mobile-dock {
   height: 100%;
   overflow: hidden;
 }
 
-.pl-button {
+.pl-pledger-root .pl-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -31,32 +31,32 @@
   padding: 0.5rem 0.75rem;
 }
 
-.pl-button svg {
+.pl-pledger-root .pl-button svg {
   height: 0.75rem;
   width: 0.75rem;
   margin-right: 0.5rem;
 }
 
-.pl-button:hover {
+.pl-pledger-root .pl-button:hover {
   background-color: var(--pl-color-surface-light);
   border-color: var(--pl-color-border);
 }
 
-.pl-tabs input[type="radio"] {
+.pl-pledger-root .pl-tabs input[type="radio"] {
   display: none;
 }
 
-.pl-tabs svg {
+.pl-pledger-root .pl-tabs svg {
   height: 0.75rem;
   width: 0.75rem;
 }
 
-.pl-tabs {
+.pl-pledger-root .pl-tabs {
   display: flex;
   font-weight: bold;
 }
 
-.pl-tabs label {
+.pl-pledger-root .pl-tabs label {
   padding: 0.5rem 1rem;
   cursor: pointer;
   border: 1px solid transparent;
@@ -67,12 +67,12 @@
   border-radius: 0.5rem;
 }
 
-.pl-tabs > :is(label:has(:checked)) {
+.pl-pledger-root .pl-tabs > :is(label:has(:checked)) {
   color: var(--b3-theme-on-primary, #fff);
   background-color: var(--pl-color-primary);
 }
 
-.pl-card {
+.pl-pledger-root .pl-card {
   color: var(--pl-color-text);
   background-color: var(--pl-color-background);
   border-radius: 0.5rem;
@@ -80,12 +80,12 @@
   padding: 0.5rem 1rem;
 }
 
-.pl-card-title {
+.pl-pledger-root .pl-card-title {
   font-size: 1rem;
   font-weight: bold;
 }
 
-.pl-loading {
+.pl-pledger-root .pl-loading {
   display: inline-block;
   width: 1.2em;
   height: 1em;
@@ -94,33 +94,33 @@
   margin-left: 1rem;
 }
 
-.pl-loading::before,
-.pl-loading::after {
+.pl-pledger-root .pl-loading::before,
+.pl-pledger-root .pl-loading::after {
   content: "";
   position: absolute;
   width: 0.2em;
   height: 100%;
   background: currentColor;
-  animation: pl-loading-wave 1s infinite ease-in-out;
+  animation: pl-pledger-loading-wave 1s infinite ease-in-out;
 }
 
-.pl-loading {
+.pl-pledger-root .pl-loading {
   background: currentColor;
   width: 0.2em;
-  animation: pl-loading-wave 1s infinite ease-in-out;
+  animation: pl-pledger-loading-wave 1s infinite ease-in-out;
 }
 
-.pl-loading::before {
+.pl-pledger-root .pl-loading::before {
   left: -0.4em;
   animation-delay: -0.2s;
 }
 
-.pl-loading::after {
+.pl-pledger-root .pl-loading::after {
   left: 0.4em;
   animation-delay: 0.2s;
 }
 
-@keyframes pl-loading-wave {
+@keyframes pl-pledger-loading-wave {
   0%,
   80%,
   100% {
@@ -131,7 +131,7 @@
   }
 }
 
-.pl-form-input {
+.pl-pledger-root .pl-form-input {
   height: 2.15rem;
   padding: 0 0.75rem;
   line-height: 1.25rem;
@@ -143,23 +143,23 @@
   display: grid;
 }
 
-.pl-form-input:hover,
-.pl-form-textarea:hover {
+.pl-pledger-root .pl-form-input:hover,
+.pl-pledger-root .pl-form-textarea:hover {
   border-color: var(--pl-color-text-secondary);
 }
 
-.pl-form-input:focus,
-.pl-form-textarea:focus {
+.pl-pledger-root .pl-form-input:focus,
+.pl-pledger-root .pl-form-textarea:focus {
   border-color: var(--pl-color-primary);
   box-shadow: 0 0 0 2px var(--pl-color-primary-light);
 }
 
-.pl-form-input::placeholder,
-.pl-form-textarea::placeholder {
+.pl-pledger-root .pl-form-input::placeholder,
+.pl-pledger-root .pl-form-textarea::placeholder {
   color: var(--pl-color-text-secondary);
 }
 
-.pl-form-textarea {
+.pl-pledger-root .pl-form-textarea {
   padding: 0.6rem 0.75rem;
   line-height: 1.25rem;
   color: var(--pl-color-text);
@@ -171,15 +171,15 @@
   outline: none;
 }
 
-.tab-content > div {
+.pl-pledger-root .pl-tab-content > div {
   display: none;
 }
 
-.pl-tabs:has(label:nth-of-type(1) input:checked)
-  + .tab-content
+.pl-pledger-root .pl-tabs:has(label:nth-of-type(1) input:checked)
+  + .pl-tab-content
   > div:nth-child(1),
-.pl-tabs:has(label:nth-of-type(2) input:checked)
-  + .tab-content
+.pl-pledger-root .pl-tabs:has(label:nth-of-type(2) input:checked)
+  + .pl-tab-content
   > div:nth-child(2) {
   display: block;
 }

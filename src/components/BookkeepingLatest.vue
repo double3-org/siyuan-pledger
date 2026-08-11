@@ -243,7 +243,11 @@ async function initBookkeepingRecords(): Promise<void> {
     return;
   }
 
-  const records = await loadBookkeepingRecords(props.settingConfData);
+  const { records, error } = await loadBookkeepingRecords(props.settingConfData);
+  if (error) {
+    showMessage(error, 3000, "error");
+    return;
+  }
   billRecords.value = records.map(toTimelineRecord).sort(sortBillRecord);
   emitRecordsChanged();
 }

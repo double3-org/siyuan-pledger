@@ -1,5 +1,5 @@
 <template>
-  <div class="pl-bookkeeping-edit-main">
+  <div class="pl-bookkeeping-edit-main" @keydown="onKeydown">
     <section class="pl-bookkeeping-hero">
       <div class="pl-bookkeeping-type-tabs">
         <label :class="{ active: bookkeepingType === 'expense' }">
@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import currency from "currency.js";
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { showMessage } from 'siyuan';
 import { getCurrentTime } from "@/api/siyuanApi"
 import DatePicker from "@/components/custom/DatePicker.vue";
@@ -160,38 +160,55 @@ function calculateExpression(expression: string): number {
   const normalizedExpression = expression.replace(/[+\-*/.]$/, "");
   const tokens = normalizedExpression.match(/\d+(?:\.\d+)?|[+\-*/]/g) || [];
   if (tokens.length === 0) return 0;
+  if (tokens.join("") !== normalizedExpression || tokens.length % 2 === 0) {
+    throw new Error("invalid expression");
+  }
 
+  type Operator = "+" | "-" | "*" | "/";
   const values: number[] = [];
-  const operators: ("+" | "-")[] = [];
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    if (token === "+" || token === "-") {
-      operators.push(token);
+  const operators: Operator[] = [];
+  const priority: Record<Operator, number> = { "+": 1, "-": 1, "*": 2, "/": 2 };
+
+  // 每次从栈中取出左右操作数，确保连续乘除也会按从左到右完整计算。
+  const applyOperator = () => {
+    const operator = operators.pop();
+    const right = values.pop();
+    const left = values.pop();
+    if (!operator || left === undefined || right === undefined) throw new Error("invalid expression");
+    if (operator === "/" && right === 0) throw new Error("divide by zero");
+
+    const leftValue = currency(left, { precision: 8 });
+    const result = operator === "+"
+      ? leftValue.add(right).value
+      : operator === "-"
+        ? leftValue.subtract(right).value
+        : operator === "*"
+          ? leftValue.multiply(right).value
+          : leftValue.divide(right).value;
+    values.push(result);
+  };
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (index % 2 === 0) {
+      const value = Number(token);
+      if (!Number.isFinite(value)) throw new Error("invalid number");
+      values.push(value);
       continue;
     }
-    if (token !== "*" && token !== "/") {
-      values.push(Number(token));
-      continue;
+
+    const operator = token as Operator;
+    if (!(operator in priority)) throw new Error("invalid operator");
+    while (operators.length && priority[operators[operators.length - 1]] >= priority[operator]) {
+      applyOperator();
     }
-
-    const prev = values.pop();
-    const next = tokens[++i];
-    if (prev === undefined || !next) throw new Error("invalid expression");
-    if (token === "/" && Number(next) === 0) throw new Error("divide by zero");
-
-    const value = token === "*"
-      ? currency(prev, { precision: 8 }).multiply(next).value
-      : currency(prev, { precision: 8 }).divide(next).value;
-    values.push(value);
+    operators.push(operator);
   }
 
-  let result = currency(values[0] || 0, { precision: 8 });
-  for (let i = 0; i < operators.length; i++) {
-    const value = values[i + 1] || 0;
-    result = operators[i] === "+" ? result.add(value) : result.subtract(value);
-  }
+  while (operators.length) applyOperator();
+  if (values.length !== 1) throw new Error("invalid expression");
 
-  return Number(result.value.toFixed(2));
+  return Number(values[0].toFixed(2));
 }
 
 const currentAmount = computed(() => {
@@ -383,9 +400,7 @@ onMounted(() => {
   } else {
     getCurrentTime().then(res => selectedDate.value = res);
   }
-  window.addEventListener("keydown", onKeydown);
 });
-onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 function formatAmount(value: number): string {
   const fixed = value.toFixed(2);
