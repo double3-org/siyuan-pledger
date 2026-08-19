@@ -86,6 +86,10 @@
 | `createdAt`     |  否 | ISO 日期时间字符串              | 创建时间，例如 `2026-08-11T08:30:00.000Z` |
 | `displayTime`   |  否 | `HH:mm`                  | 时间，例如 `08:30`                      |
 
+## 外部写入
+如果需要通过 Agent、Skill、CLI、MCP 或其他程序写入 pLedger 数据，请遵守：
+[pLedger 外部写入兼容规范](https://github.com/double3-org/siyuan-pledger/blob/main/docs/EXTERNAL_WRITE_SPEC.md)
+
 ## 特别鸣谢
 
 项目使用 `Vue`、`ECharts`、`cally`、`currency.js` 等框架或第三方库实现主要业务功能
