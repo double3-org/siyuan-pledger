@@ -385,7 +385,8 @@ export async function getBookkeepingRecordsByPledge(
     throw new Error("按日期存放的笔记本无效或无法访问");
   }
 
-  const rootPath = rootLocation?.path.replace(/\/+$/, "") || "";
+  // 思源返回的根文档路径以 .sy 结尾，而子文档路径使用去掉 .sy 后的目录作为前缀。
+  const rootPath = rootLocation?.path.replace(/\/+$/, "").replace(/\.sy$/, "") || "";
   const locationCache = new Map<string, { notebook: string; path: string }>();
   const scopedRecords: typeof records = [];
 
@@ -405,7 +406,7 @@ export async function getBookkeepingRecordsByPledge(
 
     if (
       location.notebook === rootLocation?.notebook
-      && (location.path === rootPath || location.path.startsWith(`${rootPath}/`))
+      && (record.documentId === rootId || location.path.startsWith(`${rootPath}/`))
     ) {
       scopedRecords.push(record);
     }
