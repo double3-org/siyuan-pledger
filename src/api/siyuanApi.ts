@@ -312,17 +312,14 @@ export type PledgeAttributeRow = {
   actual_content?: string;
 };
 
-/** 分页读取 pledge 属性，可按存放方式筛选，也可用于全量数据扫描。 */
-export async function getPledgeAttributeRows(storageMode?: "central" | "date"): Promise<PledgeAttributeRow[]> {
+/** 分页读取全部 pledge 属性，存放方式应在解析 JSON 后筛选。 */
+export async function getPledgeAttributeRows(): Promise<PledgeAttributeRow[]> {
   const pageSize = 1024;
   const rows: PledgeAttributeRow[] = [];
-  const storageModeSql = storageMode
-    ? ` AND a.value LIKE '%"storageMode":"${storageMode}"%'`
-    : "";
 
   for (let offset = 0; ; offset += pageSize) {
     // 思源会将未指定 LIMIT 的 SQL 默认截断为 64 行，因此必须显式分页读取。
-    const sql = `SELECT a.block_id,a.value,b.root_id AS actual_document_id,b.box AS actual_notebook_id,b.path AS actual_path,b.hpath AS actual_hpath,COALESCE(b.markdown,b.content,'') AS actual_content FROM attributes a LEFT JOIN blocks b ON b.id = a.block_id WHERE a.name = 'custom-pledge'${storageModeSql} ORDER BY a.block_id ASC LIMIT ${pageSize} OFFSET ${offset}`;
+    const sql = `SELECT a.block_id,a.value,b.root_id AS actual_document_id,b.box AS actual_notebook_id,b.path AS actual_path,b.hpath AS actual_hpath,COALESCE(b.markdown,b.content,'') AS actual_content FROM attributes a LEFT JOIN blocks b ON b.id = a.block_id WHERE a.name = 'custom-pledge' ORDER BY a.block_id ASC LIMIT ${pageSize} OFFSET ${offset}`;
     const resp = await executeSql(sql);
     if (!resp || resp.code !== 0 || !Array.isArray(resp.data)) {
       throw new Error("读取记账属性失败");
@@ -349,12 +346,13 @@ export async function getBookkeepingRecordsByPledge(
   const rootId = storageRootId?.trim();
   if (!rootId) throw new Error("记账数据存放位置为空");
 
-  const attributeRows = await getPledgeAttributeRows(storageMode);
+  const attributeRows = await getPledgeAttributeRows();
 
   const records: (BookkeepingRecord & { blockId?: string; documentId?: string; displayTime?: string; createdAt?: string })[] = [];
   for (const item of attributeRows) {
     try {
       const data = JSON.parse(item.value);
+      if (data?.storageMode !== storageMode) continue;
       if (!data?.date || !data?.parentName || !data?.childName) continue;
       records.push({
         type: data.type,
