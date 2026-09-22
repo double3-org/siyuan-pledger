@@ -154,6 +154,7 @@ const statuses: PledgeDataStatus[] = [
   "managed",
   "scattered",
   "conflict",
+  "content_mismatch",
   "invalid_attribute",
   "broken_reference",
   "unresolved",
@@ -162,6 +163,7 @@ const statusLabels: Record<PledgeDataStatus, string> = {
   managed: "当前配置已管理",
   scattered: "散落但可识别归属",
   conflict: "属性与实际位置冲突",
+  content_mismatch: "正文与属性不一致",
   invalid_attribute: "属性或格式异常",
   broken_reference: "块或文档引用失效",
   unresolved: "无法判断归属",
@@ -633,6 +635,7 @@ function formatDateTime(value: string): string {
 }
 
 .pl-status-tag.is-conflict,
+.pl-status-tag.is-content_mismatch,
 .pl-status-tag.is-invalid_attribute,
 .pl-status-tag.is-broken_reference {
   color: var(--pl-color-error);

@@ -10,11 +10,13 @@ import {
   saveBookkeepingRecord,
   type StoredBookkeepingRecord,
 } from "./bookkeepingService";
+import { escapeMarkdownTableCell, splitMarkdownTableRow } from "../utils/pl-utils";
 
 export type PledgeDataStatus =
   | "managed"
   | "scattered"
   | "conflict"
+  | "content_mismatch"
   | "invalid_attribute"
   | "broken_reference"
   | "unresolved";
@@ -226,6 +228,38 @@ function classifyPledgeRow(input: {
   // 集中存放有明确的文档边界，可以可靠修复错误模式；按日期存放仅靠笔记本无法排除集中数据。
   const belongsToCurrent = insideLocation
     && (input.storageMode === "central" || attribute.storageMode === "date");
+
+  // 正文按写入规范逐字段核对；出现差异时无法判断哪一侧正确，因此不自动清洗。
+  const expectedCells = [
+    record.date,
+    record.parentName,
+    record.childName,
+    record.type === "expense" ? "支出" : "收入",
+    record.amount.toFixed(2),
+    record.remark,
+  ];
+  const expectedContent = expectedCells.map(escapeMarkdownTableCell).join("|");
+  if (input.content !== expectedContent) {
+    const actualCells = splitMarkdownTableRow(input.content);
+    const fieldNames = ["日期", "一级分类", "二级分类", "收支类型", "金额", "备注"];
+    const mismatchedFields = actualCells.length === expectedCells.length
+      ? fieldNames.filter((_field, index) => actualCells[index] !== expectedCells[index])
+      : [];
+    return {
+      ...base,
+      attribute,
+      record,
+      status: "content_mismatch",
+      reasons: [actualCells.length !== expectedCells.length
+        ? "正文格式异常：应包含日期、一级分类、二级分类、收支类型、金额、备注六个字段"
+        : mismatchedFields.length
+          ? `正文与属性不一致：${mismatchedFields.join("、")}`
+          : "正文格式与属性对应的标准格式不一致"],
+      belongsToCurrent,
+      repairable: false,
+      changes: [],
+    };
+  }
 
   if (belongsToCurrent) {
     const proposedAttribute = createCanonicalPledgeAttribute(record, {
